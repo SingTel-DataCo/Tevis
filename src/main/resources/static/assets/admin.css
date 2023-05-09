@@ -1,0 +1,20 @@
+
+.nav-link {
+    text-align: left;
+    width: 250px;
+}
+
+.tab-content {
+    width: 90%;
+}
+
+.dt-buttons {
+    float: left;
+}
+
+.adminTable table tbody tr td {
+    max-width: 250px;
+    white-space: break-spaces;
+    word-break: break-all;
+    text-overflow: inherit;
+}

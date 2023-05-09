@@ -1,0 +1,397 @@
+[
+  {
+    "name": "UnitIdCheck",
+    "description": "This preprocessing module analyses the cellId and unitId discrepancies of the provided IC format datasets. ",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737042/Cell+Id+Unit+Id+Checks"
+  },
+  {
+    "name": "CellInvCheck",
+    "description": "This preprocessing module analyses the cellId and unitId discrepancies of the provided IC format datasets. ",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737042/Cell+Id+Unit+Id+Checks"
+  },
+  {
+    "name": "CellInventoryFeatures",
+    "description": "This module builds/prepares cell inventory features such as sectorId, roi1Name, number of cells for each sector using the NetworkCellInventory data. The output of this module will be used as an input to predict the dataScalingFactor for 4G cells.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737064/Pre-process+FiveG+-+Feature+Engineering+Cell+Inventory"
+  },
+  {
+    "name": "KpiFeatures",
+    "description": "This module builds the KPI (Key performance indicator) features such as the metrics of uplink/downlink traffic data volume, uplink/downlink cell throughput, no of RRC connected users, amount of voice over LTE for each sector using the cellInventory, kpi4g5g and userTxn data. The output of this module will be used as an input to predict the 4G dataScalingFactor for 4G cells and to create data scaling factor for 4G cells in pure sectors (sectors with no 5G NSA cells).",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737082/Pre-process+FiveG+-+Feature+Engineering+KPI"
+  },
+  {
+    "name": "SubscriberFeatures",
+    "description": "This module builds the Subscriber features such as the segment type used, average revenue per user, totalCallDuration, totalSmsCount, totalDataUsage and their dataUsage breakdowns for each unique subscriberId using the cellInventory, subscriberProfile and userTxn data. The output of this module will be used as an input to predict the 4G dataScalingFactor for 4G cells and to create data scaling factor for 4G cells in pure sectors (sectors with no 5G NSA cells).",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737120/Pre-process+FiveG+-+Feature+Engineering+Subscriber"
+  },
+  {
+    "name": "DerivedGeoFeatures",
+    "description": "This module builds the DerivedGeoFeatures features (a more granular site and distance based KPI metrics) such as the uplink/downlink traffic data volume, uplink/downlink cell throughput, no of RRC connected users, amount of voice over LTE and etc for each sector using the cellInventory, kpi4g5g and Pure4gDataScalingFactor data. The output of this module will be used as an input to predict the 4G dataScalingFactor for 4G cells and to create data scaling factor for 4G cells in pure sectors (sectors with no 5G NSA cells).",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737143/Pre-process+FiveG+-+Feature+Engineering+DerivedGeoFeatures"
+  },
+  {
+    "name": "CombineFeatures",
+    "description": "This module combines all the previously created KpiFeatures, CellInventoryFeatures, SubscriberFeatures, DerivedGeoFeatures to get the CombinedFeatures. This CombinedFeatures will be used to help us predict the 4G dataScalingFactor for 4G cells and to create data scaling factor for 4G cells in pure sectors (sectors with no 5G NSA cells)",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737176/Pre-process+FiveG+-+Combine+Features"
+  },
+  {
+    "name": "XgboostRegression",
+    "description": "A generic module that takes in some training data and trains an xgboost regression model (incld. hyperparameter tuning) to predict on some input test data. It is currently used to predict the 4G dataScalingFactor for 4G cells in hybrid sectors (sectors with  5G NSA cells) which is subsequently used to split eligible 5G transactions to 4G and 5G cells.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737259/Xgboost+Regression"
+  },
+  {
+    "name": "SplitUserTxnFourG",
+    "description": "Having predicted the 4G dataScalingFactor for 4G cells in hybrid sectors (sectors with  5G NSA cells), this module takes in userTxn, does some preprocessing (similar to enrichedTxn in currentUsage), and re-distribute some of the 4G downlink data usage from 4G cells in hybrid sectors to the 5G NSA cells.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737209/Pre-process+FiveG+-+Split+User+Transaction+FourG"
+  },
+  {
+    "name": "LatentDemand",
+    "description": "This module estimates the latent demand for each cell for each hour. It is the difference between actual desired demand and observed demand. The predicted Latent Demand value is compared with the observed demand, by assuming a near linear relationship between the connected user (CU) and data volume (DV). This value can be used in the upgrade planning and optimisation of telco network.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737400/1.1.2.+Latent+Demand"
+  },
+  {
+    "name": "UnitProperties",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "CellToUnit",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "CurrentUsageFiveGData",
+    "description": "A streamlined design to current usage module leveraging dataUsageClassification.csv to consolidate different options of usage calculation.\nThis module takes in enrichedTxn, scale the volume and run several aggregations (sum of volume, distinct counts) to derive outputs that can be easily used by subsequent modules for demand forecasting and other computations.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737358/1.1.1.2+Current+Usage+Data"
+  },
+  {
+    "name": "CurrentUsageFiveGVoiceSms",
+    "description": "Usage voice and sms data needs to be aggregated for downstream processing. KPI data is recognised to have higher accuracy than subscriber data, hence aggregated  call durations and sms counts will be scaled from userTxn data to KPI data for smoothing of inaccuracies.\n\nThis is an intermediate data preparation step for modules downstream where current demand is aggregated by (cellId, segment, simType, maxCapability) and scaled for future computational needs.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737326/1.1.1.1+Current+Usage+Voice+and+SMS"
+  },
+  {
+    "name": "VideoUsageRatio",
+    "description": "1. Determine the proportion of video usage in the transaction data in order to update growth rate on video and non-video demand\n2. Apply different growth rate on video and non-video demand",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738123/2.1.1.1+Video+Experience"
+  },
+  {
+    "name": "Sra2",
+    "description": "The Average Revenue Per User (ARPU) is the average revenue generated by a customer, of an operator. ARPU is normally the customer-level average revenue measure which is expressed per month or per year.\n\nThis module computes ARPU contributed by each unit per transaction type with the given customer's ARPU and customer's voice, SMS, data consumption in each cell. The computed yield also considers future data usage based on top down growth rate.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/CV/pages/3005449149/1.1.5.1.+Yield+Computation+Site+Revenue+Attribution+or+SRA"
+  },
+  {
+    "name": "ConfigGenerator",
+    "description": "Generates all feasible upgrade configuration for a planning unit and choosing the best possible upgrade combination and comparing them.\n\nThis module generates these configurations based on given upgrade rules and outputs the resulting upgrade configurations.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738831/3.1.2.+Config+Generator"
+  },
+  {
+    "name": "ThroughputComputer",
+    "description": "Derive throughput estimates of different upgrade permutations using observed KPI records",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737485/1.1.3+Throughput+Computer+new"
+  },
+  {
+    "name": "CapacityCap",
+    "description": "",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C23/pages/3281652672/3.2.1.+Capacity+Cap"
+  },
+  {
+    "name": "CapacityComputer",
+    "description": "Translate Throughputs into Capacity values for each upgrade configuration so that they can be used during Usage Allocation and other modules",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C23/pages/3376316662/3.1.1+Capacity+Computer+new"
+  },
+  {
+    "name": "SectorForecast",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "FillSectorForecast",
+    "description": "Generate sector-level forecasts that were missed in the original set of sector based forecasting outputs. The average daily ratios of forecasts with matching unit IDs will be used to fill in. If there are no matching unit IDs, the average of daily ratios across all sector forecasts will be used.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738765/2.1.1.3+Fill+Sector+Forecast"
+  },
+  {
+    "name": "NationwideAdjustment",
+    "description": "Adjusts the sector-level forecasts based on overall growth rate of the national forecast datasets.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738416/2.1.1.5+Nationwide+Adjustment"
+  },
+  {
+    "name": "SegmentForecast",
+    "description": "Generates segment-level forecasted values and applies adjustment based on growth rate per segment of the national forecast datasets.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738443/2.1.1.6+Segment+Forecast"
+  },
+  {
+    "name": "GrowthRateGen",
+    "description": "Computes to-end-of-year cell-segment-level growth rates from the Segment Forecast output. Only the start timestamp of the current yearMonth and the last timestamps for each year will be used to compute for growth rates.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738470/2.1.1.7+Growth+Rate+Generator"
+  },
+  {
+    "name": "DemandForecastTxn",
+    "description": "Performs forecasting on data, voice or sms usages from enriched user transaction data. Growth rates generated from the GrowthRateGen module is used to perform forecasting per period, starting from year 0 (to-end-of-year). Compounded forecasting is applied to generate year 1 value, year 2 value, etc. Data volume usages will be split into streaming (video) and non-streaming (data) usages.\n\nThe previous implementation of Demand Forecast (see “Total Demand Forecast” confluence page) performs forecasting on cell-level current usages using segment-level growth rates. This has been changed to use cell-level growth rates to forecast an even more granular user-transaction data.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738504/2.1.1.8+Demand+Forecast+Transactions"
+  },
+  {
+    "name": "RevenueForecastYearZero_RevenueForecast",
+    "description": "The objective of this module is to calculate the maximum potential revenue which can be generated by every cell and segment, by different service types (data, voice, SMS) and technologies (3G, 4G, 5G).\n\n5G revenue forecast brings in enhancement on the existing module to include 5G revenue calculation and provide more granular output at cell/segment level.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738538/2.1.2.+Revenue+Forecast"
+  },
+  {
+    "name": "BusyHourYearZero_BusyHour",
+    "description": "This module uses demand forecasts to predict the demand of busy hour by applying a ratio representing the planning cell's busiest hourly voice and data demands. These demand forecasts are used to compute the peak allocation of the cell’s capacities to reflect peak level demands, ensuring capacity is adequately planned to meet them.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738570/2.1.3.+Busy+Hour"
+  },
+  {
+    "name": "FiveGCellToUnitYearZero_FiveGCellToUnit",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "RevenueForecastYearX_RevenueForecast",
+    "description": "The objective of this module is to calculate the maximum potential revenue which can be generated by every cell and segment, by different service types (data, voice, SMS) and technologies (3G, 4G, 5G).\n\n5G revenue forecast brings in enhancement on the existing module to include 5G revenue calculation and provide more granular output at cell/segment level.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738538/2.1.2.+Revenue+Forecast"
+  },
+  {
+    "name": "BusyHourYearX_BusyHour",
+    "description": "This module uses demand forecasts to predict the demand of busy hour by applying a ratio representing the planning cell's busiest hourly voice and data demands. These demand forecasts are used to compute the peak allocation of the cell’s capacities to reflect peak level demands, ensuring capacity is adequately planned to meet them.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738570/2.1.3.+Busy+Hour"
+  },
+  {
+    "name": "FiveGCellToUnitYearX_FiveGCellToUnit",
+    "description": "This module rolls up demand forecast 5g, busy hour 5g, and revenue 5g from cell to unit level. A mobile/FWA split for certain properties for each respective schemas. ",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738602/2.1.4.+Cell+to+Unit+aka+Demand+Revenue+Rollup"
+  },
+  {
+    "name": "UsageAllocationTrainingDataPrep",
+    "description": "The main purpose of this module is to transform the busyHour userTxn data and build the following model features\n\n1. scaled individual transaction volumes and their assigned band\n\n2. capacities of each planning unit broken down by their band and RAT type\n\n3. geolocation features\n\n4. subscriber metrics\n\n5. aggregated planning unit features\n\n6. large transactions are also broken down into smaller chunk size if any.\n\nThe results are then consolidated to produce a transformed user transaction output with the above engineered model features.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738930/3.1.4.1+Usage+Allocation+Training+Data+Prep"
+  },
+  {
+    "name": "UsageAllocationModelTrainer",
+    "description": "The main purpose of this module is to train a multiclass xgboost classification model to study the usage allocation patterns between model features built (user transaction, geolocation, subscriber metrics and aggregated unit metrics features) and the current assigned bands.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738947/3.1.4.2+Usage+Allocation+Model+Trainer"
+  },
+  {
+    "name": "UsageAllocationPredictDataPrep",
+    "description": "The main purpose of this module is to transform the forecasted userTxn data and build the following model features \n\n1. capacities of each planning unit broken down by their band and RAT type\n\n2. geolocation features\n\n3. subscriber metrics\n\n4. aggregated planning unit features\n\n5. large transactions are also broken down into smaller chunk size if any.\n\nThe results are then consolidated to produce a transformed forecasted user transaction output with the above engineered model features.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738964/3.1.4.3+Usage+Allocation+Predict+Data+Prep"
+  },
+  {
+    "name": "UsageAllocationPredictor",
+    "description": "The main purpose of this module is to transform the forecastedUserTxn with model features output from UsageAllocationPredictDataPrep and build the following features required for batch allocation in the UsageAllocationBatchProcessor.\n\n1. allocated band probabilities from our trained multiclass xgboost classification model in UsageAllocationModelTrainer.\n\n2. demand breakdown voice3gMB , voice4gMB , totalVoiceMB, totalDemand for each subscriber\n\n3. updated band probabilities according to the subscriber’s device supported band types.\n\nThe module also imputes the probabilities of any unseen bands that are present in the upgraded configs.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388738983/3.1.4.4+Usage+Allocation+Predictor"
+  },
+  {
+    "name": "UsageAllocationBatchProcessor",
+    "description": "The main purpose of this module is to allocate a band for each subscriber in the planning unit taking into account the amount of capacity a planning unit has for each band and RAT type (Radio Access Technology) in a pseudo random order.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739004/3.1.4.5+Usage+Allocation+Batch+Processor"
+  },
+  {
+    "name": "UsageAllocationRevenueDataPrep",
+    "description": "The main purpose is to \n\n1. compute the monthlyToYearlyRatio , bhRatioAndAddressedDemandRatio and weightedYields\n\n2. compute the revenuePerSub using weightedYields and batchProcessOutput from usageAllocationBatchProcessor module.\n\n3. compute the revenue for busyHours in the config month and estimate the revenue for the whole month using bhRatioAndAddressedDemandRatio\n\n4. apply the monthlyToYearlyRatio to the output from step 3 to compute the revenue for the whole year.\n\nThe module outputs the aggregated yearly revenue output with revenue breakdown, total demand breakdown by ratType and incremental revenue.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739021/3.1.4.6+Usage+Allocation+Revenue+Data+Prep"
+  },
+  {
+    "name": "UsageAllocationPostProcess",
+    "description": "The purpose of this module is to transform the allocated (predicted) transactions to the allocation per unitConfigId per year to be ingested downstream for further analysis.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739038/3.1.4.7+Usage+Allocation+Post+Process"
+  },
+  {
+    "name": "UsageAllocationUnnest",
+    "description": "Flattens Usage Allocation output to allow ease when exporting to be used for analysis",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739051/3.1.4.8+Usage+Allocation+Unnest"
+  },
+  {
+    "name": "UpgradeRevenue",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "QuarterlyRevenue",
+    "description": "This module produces quarterly achievable revenue and ROI  to support quarter wave planning. It uses upgrade revenue’s output.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739662/4.1.1.+Upgrade+Revenue+MultiYear+and+Quarterly+Revenue"
+  },
+  {
+    "name": "CustomerExperienceFiveG",
+    "description": "This module takes AggUserTrxn and computes the average customer experience values for each unitId, month and ratType. Additional required inputs: SubscriberProfile, DeviceInfo, AggUserTrxn are used to tag the cell type and enhance the usage profile so as to differentiate 5G throughputs for 5G NSA cells.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/CV/pages/3005449402/1.2.2.+Customer+Experience+FiveG+5G+CX"
+  },
+  {
+    "name": "HighValueCustomerProportion",
+    "description": "This module allows telco planner to rank and prioritise site upgrades according to the proportion of utilisation by high-value customer (HVC) subscriber segment.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/CV/pages/3005449417/1.2.3+High-Value+Customer"
+  },
+  {
+    "name": "Congestion_TargetSpeedCongestion",
+    "description": "The Congestion module was built so that we can compute a representative congestion score for each planning unit given all the cells congestion score within that planning unit which will be used in DE. We look at 2G, 3G, 4G and 5G cells with different logic and threshold and assign an accurate representative congestion index to each planning unit based on 4 weeks of OSS data.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737560/1.1.4.+Congestion"
+  },
+  {
+    "name": "Congestion_HourlyCongestion",
+    "description": "The Congestion module was built so that we can compute a representative congestion score for each planning unit given all the cells congestion score within that planning unit which will be used in DE. We look at 2G, 3G, 4G and 5G cells with different logic and threshold and assign an accurate representative congestion index to each planning unit based on 4 weeks of OSS data.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737560/1.1.4.+Congestion"
+  },
+  {
+    "name": "Congestion_MonthlyCongestion",
+    "description": "The Congestion module was built so that we can compute a representative congestion score for each planning unit given all the cells congestion score within that planning unit which will be used in DE. We look at 2G, 3G, 4G and 5G cells with different logic and threshold and assign an accurate representative congestion index to each planning unit based on 4 weeks of OSS data.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737560/1.1.4.+Congestion"
+  },
+  {
+    "name": "Congestion_UnitCongestionScorer",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "ImpactOfChurn",
+    "description": "Telcos usually have an internally developed Subscriber Churn Propensity model that represents the likelihood of a subscriber churn.\n\nThis module provides a monetary estimate for the revenue at risk per unit resulting from subscriber churn. It uses the download throughput at significant cells/sites for each subscriber to calculate the likelihood of a subscriber churn. ",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/CV/pages/3005449380/1.2.1.+Impact+of+Churn"
+  },
+  {
+    "name": "TargetNetworkUtilizationDataPrep",
+    "description": "Physical Resource Block (PRB) is the smallest unit of radio spectrum resource that can be allocated to a user connecting to a cell. This module predicts the PRB utilization based on allocated demand and historical KPI data and produces a score for each unit upgrade configuration that can be used as a lever for decision engine (DE).",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739108/3.2.2.+Target+Network+Utilization+PRB"
+  },
+  {
+    "name": "TargetNetworkUtilizationPredictor",
+    "description": "Physical Resource Block (PRB) is the smallest unit of radio spectrum resource that can be allocated to a user connecting to a cell. This module predicts the PRB utilization based on allocated demand and historical KPI data and produces a score for each unit upgrade configuration that can be used as a lever for decision engine (DE).",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739108/3.2.2.+Target+Network+Utilization+PRB"
+  },
+  {
+    "name": "QuarterTargetNetworkUtilizationScorer",
+    "description": "Physical Resource Block (PRB) is the smallest unit of radio spectrum resource that can be allocated to a user connecting to a cell. This module predicts the PRB utilization based on allocated demand and historical KPI data and produces a score for each unit upgrade configuration that can be used as a lever for decision engine (DE).",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739108/3.2.2.+Target+Network+Utilization+PRB"
+  },
+  {
+    "name": "UserForecast",
+    "description": "This module forecast the number of active connected users in the future for cell/unit based on KPI data and forecasted user growth rate from Time Series Forecasting Tool (Python Forecasting). The forecasted value for active connected users will be applied as input for Target Throughput and Target Congestion.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/CV/pages/3005449871/2.2.2.+User+Forecasting"
+  },
+  {
+    "name": "TargetCongestion",
+    "description": "The main limitation of our current congestion module is that we cannot compare the differences in congestion score among different planning unit config. To address this, Target Congestion is implemented so that we can forecast the changes at the cell, site and unit level and also help clients validate why and/or which band and/or cell they should be upgrading.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739302/3.2.3.+Target+Congestion"
+  },
+  {
+    "name": "TargetUserThroughput",
+    "description": "This module predicts the average target user throughput and produces a score for each unit upgrade configuration that can be used as a lever variable for Decision Engine (DE).",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739381/3.2.4.+Target+User+Throughput"
+  },
+  {
+    "name": "LoadBalancing",
+    "description": "Operators want to give a consistent experience. Users may be on different bands and latch to different cells as they move using their phone.\n\nObjective: Look at all upgrade configurations, compute a metric to evaluate how consistent of PRB utilisation ratio across different bands.\n\nThis module assess each upgrade option on how much better or worse it is compared to the current config in having unit level load balancing issue.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739448/3.2.5.+Load+Balancing+Deprecated"
+  },
+  {
+    "name": "LoadBalancing2",
+    "description": "Our current Load Balancing (load balance of upgrade options) module computes load balancing score for each upgrade option using predicted load (prb rate) to assess each upgrade option on how much better or worse it is compared to the current config in having unit level load balancing issue. This module extends the current module by computing the load balance of current configuration and evaluate load balancing opportunities (the need for upgrading / adding capacity) between layers by Sector.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739528/3.2.6.+Load+Balancing2+Load+balance+of+current+configuration"
+  },
+  {
+    "name": "NetPromoterScore",
+    "description": "Used to identify subscriber’s experience with the service provided whether subscriber are satisfied or having poor experience",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/CV/pages/3005449442/1.2.4+Net+Promoter+Score+To+be+updated"
+  },
+  {
+    "name": "UnitGeoProperties",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "CombineUnitProperties",
+    "description": "This module combines required properties at the unit level for each of the selected data (usage data, subscribers data, usage voice and sms, unit congestion score) and finally merges all unit properties together.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388740183/Combine+Unit+Properties"
+  },
+  {
+    "name": "DataJoinSingleMonth_DataJoin",
+    "description": "This module merges datasets from different modules and different months for Decision Engine processing on a unit config level. It ingest and use multiple months of data to improve the accuracy of the recommendations. One month of data does not represent the seasonal variations throughout the year.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739691/4.1.2+Combine+Multi-Month+Data+Joiner"
+  },
+  {
+    "name": "GetmergeSingleMonth",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "DecisionEngine",
+    "description": "DE Python allows you to: \n\nIdentify a list of optimal planning unit upgrades and configurations based on a single objective (criteria), or on multiple objectives with an importance ranking for each. \n\nSet constraints based on the needs of the customer (for example, the maximum allocated budget).",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739715/4.1.3.+Decision+Engine+Python+DE+Python+Updated"
+  },
+  {
+    "name": "CombineDecisionEngineOutputs",
+    "description": "This module combines the outputs of decision engine with other unit-level and unit config-level properties.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388740208/Combine+DE+Outputs"
+  },
+  {
+    "name": "HybridApproachRollUp",
+    "description": "A module that’s run when we’re intending to combine sector level outputs into site level recommendations.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737870/Hybrid+Approach+Roll+Up"
+  },
+  {
+    "name": "UsageAllocation",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "UpgradeRevenue",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "TopDownYield",
+    "description": "During deployment, clients / consultants / SEs might want to use top down yields in place of granular yields generated from SRA module. This script is for joining segment level yields with cell inventory dataset to produce required outputs\n\nObjective is to generate CellRevenueYield dataset using yields from topDownYield.csv",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737806/1.1.5.2.+Top-Down+Yield"
+  },
+  {
+    "name": "TargetCongestionModelTrainer",
+    "description": "The main limitation of our current congestion module is that we cannot compare the differences in congestion score among different planning unit config. To address this, Target Congestion is implemented so that we can forecast the changes at the cell, site and unit level and also help clients validate why and/or which band and/or cell they should be upgrading.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/CV/pages/3005450135/3.2.3.+Target+Congestion"
+  },
+  {
+    "name": "TargetCongestionPredictor",
+    "description": "The main limitation of our current congestion module is that we cannot compare the differences in congestion score among different planning unit config. To address this, Target Congestion is implemented so that we can forecast the changes at the cell, site and unit level and also help clients validate why and/or which band and/or cell they should be upgrading.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/CV/pages/3005450135/3.2.3.+Target+Congestion"
+  },
+  {
+    "name": "DataJoin",
+    "description": "This module merges datasets from different modules and different months for Decision Engine processing on a unit config level. It ingest and use multiple months of data to improve the accuracy of the recommendations. One month of data does not represent the seasonal variations throughout the year.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739691/4.1.2+Combine+Multi-Month+Data+Joiner"
+  },
+  {
+    "name": "GetmergeMultiMonth",
+    "description": "",
+    "link": ""
+  },
+  {
+    "name": "Congestion_AtHomeCongestion",
+    "description": "The Congestion module was built so that we can compute a representative congestion score for each planning unit given all the cells congestion score within that planning unit which will be used in DE. We look at 2G, 3G, 4G and 5G cells with different logic and threshold and assign an accurate representative congestion index to each planning unit based on 4 weeks of OSS data.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388737560/1.1.4.+Congestion"
+  },
+  {
+    "name": "IdentifySectorNeighbour",
+    "description": "Process cell handover datasets and geospatial information in cell inventory to generate sector neighbour pairings",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388740014/4.2.1.1.+Sector+Neighbour"
+  },
+  {
+    "name": "ClusterSectorNeighbour",
+    "description": "Using the identified sector pairs, generate well formed clusters where members of each cluster have handovers and coverage overlaps with all other members of the cluster",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388740029/4.2.1.2.+Sector+Clustering"
+  },
+  {
+    "name": "Reallocation",
+    "description": "For each identified clusters, assess for upgrades which can satisfy unmet demands of adjacent sectors such that upgrades (of the adjacent sector) need not be applied",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388740096/4.2.1.3.+Sector+Reallocation"
+  },
+  {
+    "name": "ReallocationAnalysis",
+    "description": "To evaluate reallocation options against Decision Engine results and assess the potential cost savings when Sector Reallocation is applied",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388740134/4.2.1.4.+Sector+Reallocation+Analysis"
+  },
+  {
+    "name": "NewSiteLocation",
+    "description": "New in-field site coordinates within the cluster polygon are being generated based on the number of sector unit-splits present in each cluster. These clusters are identified by the Sector Clustering modules (IdentifySectorNeighbour, ClusterSectorNeighbour) and the Reallocation modules (to assign a cluster only if having spare capacities).",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3399450657/4.2.1.5.+New+Site+Location"
+  },
+  {
+    "name": "UpgradeRevenueMultiYear",
+    "description": "This module derives achievable revenue and ROI based on addressed demand per Planning Unit config. It computes ROI for each unit upgrade option.",
+    "link": "https://dataspark.atlassian.net/wiki/spaces/C2/pages/3388739662/4.1.1.+Upgrade+Revenue+MultiYear+and+Quarterly+Revenue"
+  }
+]

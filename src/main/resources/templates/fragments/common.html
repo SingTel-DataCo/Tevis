@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="headerFiles">
+    <title>TeVis - Capex E2E Pipeline Visualization</title>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <script src="/assets/vendor/jquery-3.6.0.min.js"></script>
+    <script src="/assets/vendor/jquery-ui-1.13.2.min.js"></script>
+    <script src="/assets/vendor/jquery.dataTables-1.13.2.min.js"></script>
+    <script src="/assets/vendor/dataTables.bootstrap5-1.13.2.min.js"></script>
+    <script src="/assets/vendor/dataTables.buttons-2.3.4.min.js"></script>
+    <script src="/assets/vendor/buttons.colVis.min.js"></script>
+    <script type="text/javascript" language="javascript" src="/assets/vendor/buttons.html5-2.3.4.min.js"></script>
+    <script src="/assets/vendor/buttons.bootstrap5-2.3.4.min.js"></script>
+    <script src="/assets/vendor/jquery.json-viewer.js"></script>
+    <script src="/assets/vendor/fontawesome-all-6.2.1.min.js"></script>
+    <script src="/assets/vendor/google-charts-loader.js"></script>
+    <link rel="stylesheet" href="/assets/vendor/bootstrap-5.3.0.min.css" />
+    <link rel="stylesheet" href="/assets/vendor/jquery-ui-1.13.2.min.css" />
+    <link rel="stylesheet" href="/assets/vendor/dataTables.bootstrap5-1.13.2.min.css" />
+    <link rel="stylesheet" href="/assets/vendor/jquery.json-viewer.css" />
+    <link rel="stylesheet" href="/assets/vendor/fontawesome-all-6.2.1.min.css" />
+    <link rel="stylesheet" href="/assets/vendor/buttons.bootstrap5-2.3.4.min.css" />
+    <link rel="stylesheet" href="/assets/vendor/sidebars.css" />
+    <link rel="stylesheet" href="/assets/vendor/leaflet.css" />
+    <script src="/assets/vendor/leaflet.js"></script>
+
+    <script src="/assets/common.js"></script>
+    <link rel="stylesheet" href="/assets/common.css" />
+
+</head>
+<body>
+<div th:fragment="rowDetailsModal" id="rowDetailsTemplate">
+    <div class="modal modal-row-details" role="dialog">
+        <textarea class="text-viewer" readonly></textarea>
+        <pre class="json-viewer"></pre>
+    </div>
+</div>
+
+<div th:fragment="shareLinkModal" id="shareLinkTemplate">
+    <div class="modal modal-share-link" role="dialog">
+        <div class='loading lds-ellipsis'><div></div><div></div><div></div><div></div></div>
+        <div class="input-group mb-3 pt-3">
+            <input type="text" id="link-box" class="form-control" readonly>
+            <button class="btn btn-outline-secondary btn-copy-link" type="button"><i class="fa fa-copy"></i></button>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="chartSettingsModal" class="modal modal-chart-settings" role="dialog">
+    <div class="modal-body pre-scrollable">
+        <p>Choose a chart type, select and reorder columns, or add custom Google Chart options.</p>
+        <select class="chart-type form-select" aria-label="Default select example">
+            <option value='AnnotationChart'>Annotation Chart</option>
+            <option value='AreaChart'>Area Chart</option>
+            <option value='Bar'>Bar Chart</option>
+            <option value='BubbleChart'>Bubble Chart</option>
+            <option value='Calendar'>Calendar Chart</option>
+            <option value='CandlestickChart'>Candlestick Chart</option>
+            <option value='ColumnChart'>Column Chart</option>
+            <option value='ComboChart'>Combo Chart</option>
+            <option value='Gantt'>Gantt Chart</option>
+            <option value='Gauge'>Gauge Chart</option>
+            <option value='GeoChart'>Geo Chart</option>
+            <option value='Histogram'>Histogram</option>
+            <option value='LineChart' selected>Line Chart</option>
+            <option value='Map'>Map Chart</option>
+            <option value='OrgChart'>Org Chart</option>
+            <option value='PieChart'>Pie Chart</option>
+            <option value='Sankey'>Sankey Diagram</option>
+            <option value='ScatterChart'>Scatter Chart</option>
+            <option value='SteppedAreaChart'>Stepped Area Chart</option>
+            <option value='Table'>Table Chart</option>
+            <option value='Timeline'>Timeline Chart</option>
+            <option value='TreeMap'>Tree Map</option>
+            <option value='WordTree'>Word Tree</option>
+            <option disabled>_________</option>
+            <option value='GeoJSONMap'>GeoJSON Map</option>
+        </select>
+        <div class="row justify-content">
+            <div class="sortable-container col-3">
+                <label><input type="checkbox" id="btn-check-all" class="btn-check-all" checked /> All</label>
+                <ul class="sortable"></ul>
+            </div>
+            <div class="form-group col-5">
+                <label>Extra options (JSON):</label>
+                <textarea class="form-control textbox-chart-options" rows="3"></textarea>
+                <button class="btn btn-sm btn-primary btn-apply-chart-options">Apply</button>
+                <p>We use <a href="https://developers.google.com/chart/interactive/docs/gallery" target="_blank">Google Charts</a> and
+                    <a class="leafletjs-info" href="#" title="For GeoJSON Map, a column of GeoJSON values is required, with an optional extra column for the popup values.">LeafletJS GeoJSON Map</a> for the charts,
+                    please refer to these links for more details.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="loadingOverlay">
+    <div class="overlay">
+        <div class="overlay__inner">
+            <div class="overlay__content"><span class="spinner"></span></div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="chartDiv" id="chartDivTemplate" style="display: none">
+    <div class="chart-container">
+        <div class="dt-buttons btn-group flex-wrap" style="z-index: 10; position: absolute; right: 0; opacity: 0.7">
+            <button class="btn btn-secondary btn-chart-settings" title="View chart settings"><i class="fa fa-gear"></i></button>
+            <button class="btn btn-secondary btn-fullscreen" title="Full screen"><i class="fa fa-expand"></i></button>
+            <button class="btn btn-secondary btn-view-table" title="View table"><i class="fa fa-table"></i></button>
+        </div>
+        <div class="dynamic-chart"></div>
+        <div class="map"></div>
+        <div th:replace="fragments/common.html :: chartSettingsModal" />
+    </div>
+</div>
+
+<div th:fragment="newSection">
+    <div class="accordion-item">
+        <div class="accordion-header d-flex" id="headingId">
+            <div class="acc-toggle-btn" data-bs-toggle="collapse" data-bs-target="#collapseId" aria-expanded="true" aria-controls="collapseId"><i class="fa fa-angle-down"></i></div>
+            <input type="text" class="edit-acc-title" style="display: none" />
+            <div class="acc-title">Accordion Item</div>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                </button>
+
+                <ul class="dropdown-menu">
+                    <li class="dropdown-item btn-toggle-show-section">Toggle Expand/Collapse</li>
+                    <li class="dropdown-item btn-delete-section">Delete Query</li>
+                    <li class="dropdown-item btn-share-section">Share Query</li>
+                </ul>
+            </div>
+        </div>
+        <div id="collapseId" class="accordion-collapse collapse show" aria-labelledby="headingId">
+            <div class="description text-muted"></div>
+            <div class="input-group">
+                <textarea class="form-control search-box" placeholder="Enter your SQL statement here" rows="1"></textarea>
+                <button class="btn btn-outline-secondary search-btn" title="Run the query (Ctrl + Enter)">
+                    <i class="fa fa-play"></i>
+                </button>
+            </div>
+            <div class="dataTable">
+                <h4 class="text-muted msg-enter-sql" style="padding: 20px; text-align: center">Enter your SQL statements or click on a dataset on the navigation pane to start browsing.</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="newTabHeader">
+    <li class="ui-tabs-tab ui-corner-top ui-tab">
+        <span class="nav-link" id="tabId" data-bs-toggle="tab" data-bs-target="#tabContentId" aria-selected="true">
+            <span class="tab-name">TabId</span>
+            <input type="text" class="edit-tab-name" style="display: none" />
+            <button class="btn-close closeTab" type="button"></button>
+        </span>
+    </li>
+</div>
+
+<div th:fragment="newTabContent">
+    <div class="tab-pane active" id="tabContentId" role="tabpanel" aria-labelledby="tabId">
+        <div class="accordion">
+        </div>
+        <div>
+            <button class="btn btn-outline-secondary btn-new-section" style="width: 100%; font-size: xx-small">New Section</button>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="fileListActions" id="file-list-actions-hideout" style="display: none">
+    <span id='file-list-actions'>
+        <button class='btn btn-sm btn-outline-secondary btn-read' title="Read dataset"><i class='fa fa-play fa-xs'></i></button>
+        <button class='btn btn-sm btn-outline-secondary btn-refresh' title="Refresh dataset/collection"><i class='fa fa-refresh fa-xs'></i></button>
+        <button class='btn btn-sm btn-outline-secondary btn-unmount' title="Unmount collection"><i class='fa fa-remove fa-xs'></i></button>
+    </span>
+</div>
+
+</body>

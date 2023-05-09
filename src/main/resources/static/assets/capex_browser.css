@@ -1,0 +1,63 @@
+
+#mySidebar {
+  height: 100%;
+  width: 450px;
+  float:left;
+  top: 0;
+  left: 0;
+  overflow-x: hidden;
+  min-height: 99vh;
+  padding-left: 10px;
+}
+
+
+#searchBox {
+    width: 500px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+#legendContainer .ui-state-active, #legendContainer .ui-button:active {
+    color: black;
+}
+
+#legendContainer label {
+    color: black;
+    font-variant: small-caps;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+#modulesList {
+    overflow: auto;
+    height: 70vh;
+}
+
+#modulesList table th {
+    text-align: left;
+    text-transform: uppercase;
+}
+
+#modulesList table tbody {
+    overflow: scroll
+}
+
+#modulesList table tr td {
+    vertical-align: top;
+    font-size: 12px;
+}
+
+.modSeqModule {
+    border: solid 1px lightblue;
+    margin: 3px;
+    text-align: left
+}
+
+.modSeqModule .modName {
+    font-weight: bold
+}
+
+.aboutView {
+    font-size: small;
+    color: grey;
+}

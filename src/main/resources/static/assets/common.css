@@ -1,0 +1,379 @@
+
+html {
+  font-family: sans-serif; /* 1 */
+  -webkit-text-size-adjust: 100%; /* 2 */
+  -ms-text-size-adjust: 100%; /* 2 */
+}
+
+/* Mobile Landscape Size to Tablet Portrait (devices and browsers) */
+@media only screen and (min-width: 480px) and (max-width: 767px) { }
+
+/* Mobile Portrait Size to Mobile Landscape Size (devices and browsers) */
+@media only screen and (max-width: 479px) { }
+
+.bold {
+    font-weight:bold;
+}
+
+div.inline {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.propertiesTable {
+    font-size: small;
+}
+
+.propertiesTable tr td.key {
+    font-weight: bold;
+    width: 20px;
+}
+.propertiesTable tr td.index {
+    width: 20px;
+}
+
+#mySidebar {
+  width: 450px;
+  float:left;
+  top: 0;
+  left: 0;
+  overflow-x: hidden;
+  background-color: var(--bs-secondary-bg);
+  padding: 0 10px;
+}
+
+#sidebarHeader {
+  font-weight: bold;
+}
+
+#version {
+ font-size: 12px;
+  color: grey
+}
+
+#main {
+  width: auto;
+  overflow: scroll;
+}
+
+#wrapper {
+    float: left; width: 100%; padding-top: 60px;
+}
+
+#chartView {
+    margin-bottom: 20px;
+}
+
+#myDiagramDiv {
+    border: solid 1px black;
+    min-height: 70vh;
+    background: whitesmoke
+}
+
+#footer {
+    position: absolute;
+    background-color: #eee;
+    bottom: 0;
+    width: 100%;
+    left: 0px;
+    display:flex;
+    justify-content: space-between;
+    padding-top: 10px;
+}
+
+.ui-resizable-handle {
+    background-color: var(--bs-list-group-color);
+    width: 10px;
+}
+
+.ui-accordion .ui-accordion-content {
+    padding: 5px;
+    height: 61vh;
+}
+
+.dt-buttons .btn {
+    font-size: small;
+}
+
+.dataTable {
+  font-size: small !important;
+  width: 100% !important;
+}
+
+.dataTables_wrapper {
+    padding-top: 10px;
+}
+
+.dataTables_info {
+    color: grey;
+}
+
+.dataTable tbody tr.row-selected {
+    background-color: #c5e1fc;
+}
+
+div.dt-button-collection {
+    width: inherit !important;
+}
+
+div.dt-button-collection .dt-button {
+    min-width: 0 !important;
+}
+
+.dt-button-collection .dropdown-menu {
+    font-size: small;
+    max-height: 250px;
+    overflow: auto;
+}
+
+.even {
+    background-color: #eee !important;
+}
+
+.dataTable tbody tr.row-selected.even {
+    background-color: #c5e1fc !important;
+}
+
+.dataTable table tbody tr td {
+  white-space:nowrap; overflow:hidden; text-overflow: ellipsis; max-width: 250px
+}
+
+.dataTable select {
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+    background-image: none !important;
+}
+
+.text-viewer {
+    font-family: var(--bs-font-monospace) !important;
+    font-size: .875em !important;
+    width: 100%;
+    height: 100%;
+    resize: none;
+    vertical-align:top;
+}
+
+.inputPaths td:hover, .outputPaths td:hover,
+ .upstream td:hover, .downstream td:hover,
+ .from-value:hover, .to-value:hover, .to td:hover {
+    background-color: #c5e1fc;
+    text-decoration: underline;
+}
+
+.state-value {
+    font-variant: small-caps;
+    font-weight: bold;
+}
+
+#myModal {
+    --bs-modal-width: inherit;
+    --bs-modal-padding: inherit;
+}
+
+.ui-autocomplete {
+    max-height: 200px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+}
+
+#loading {
+    float: left;
+    position: relative;
+    z-index: 10;
+}
+
+.dt-buttons {
+    float: right;
+}
+
+#json-viewer {
+    overflow: inherit;
+}
+
+.json-toggle {
+    pointer-events: all;
+}
+
+/* loading CSS animation START */
+.lds-ellipsis {
+  display: inline-block;
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+.lds-ellipsis div {
+  position: absolute;
+  top: 0px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--bs-link-color);
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+.lds-ellipsis div:nth-child(1) {
+  left: 8px;
+  animation: lds-ellipsis1 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(2) {
+  left: 8px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(3) {
+  left: 32px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(4) {
+  left: 56px;
+  animation: lds-ellipsis3 0.6s infinite;
+}
+@keyframes lds-ellipsis1 {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes lds-ellipsis3 {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+@keyframes lds-ellipsis2 {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(24px, 0);
+  }
+}
+/* loading CSS animation END */
+
+/* loading CSS page overlay START */
+.overlay {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    background: #222;
+    opacity: 0.5;
+}
+
+.overlay__inner {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.overlay__content {
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.spinner {
+    width: 75px;
+    height: 75px;
+    display: inline-block;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.05);
+    border-top-color: #fff;
+    animation: spin 1s infinite linear;
+    border-radius: 100%;
+    border-style: solid;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/* loading CSS page overlay END */
+
+.pagination {
+    --bs-pagination-font-size: small;
+}
+
+.container, .dynamic-chart { height: 100%; }
+
+.chart-container {
+    width: 100%;
+    height: 400px;
+    margin-top: 10px;
+    padding-left: 0px;
+    padding-right: 0px;
+    position: relative;
+}
+
+.sortable-container {
+    overflow: auto;
+    height: inherit;
+    width: 300px;
+    padding-top: 20px;
+    font-size: small;
+ }
+.sortable { list-style-type: none; margin: 0; padding: 0;  }
+.sortable li { padding-left: 1.5em;  }
+.sortable li span { position: absolute; margin-left: -1.3em; }
+.sortable input[type=checkbox] { margin-right: 5px; }
+
+#chartSettingsModal .modal-body {
+    font-size: small;
+}
+
+.badge {
+    float: right;
+    background-color: grey;
+}
+
+.nav-tabs > li .closeTab {
+    font-size: xx-small;
+}
+
+.accordion-item {
+    margin: 4px;
+}
+
+.accordion-collapse {
+    margin: 15px;
+    font-size: small;
+}
+
+.accordion-header {
+    background-color: var(--bs-accordion-border-color);
+}
+
+.acc-active .accordion-header {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.acc-active .accordion-header .btn-outline-secondary {
+    --bs-btn-border-color: white;
+    --bs-btn-color: white;
+}
+
+.map { height: 100%; display: none; z-index: 0 !important; }
+
+.ui-autocomplete { z-index: 1031; }
+
+.nav-popover {
+    max-width: 500px;
+    left: 100px !important;
+}
+
+.popover-header {
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.popover-body, .modal-share-link {
+    font-size: small;
+}

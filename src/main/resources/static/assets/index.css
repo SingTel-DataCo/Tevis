@@ -1,0 +1,82 @@
+
+#mySidebar {
+  width: 450px;
+  float:left;
+  top: 0;
+  left: 0;
+  overflow-x: hidden;
+}
+
+#file-list-controls {
+    font-size: small;
+    padding: 5px;
+}
+
+#sidebarHeader {
+  font-weight: bold;
+}
+
+#dataSearchBox {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    background-color: transparent;
+    margin: 5px;
+    width: 100%;
+}
+
+#searchBox {
+    font-size: small;
+}
+
+.ui-autocomplete.ui-widget {
+  font-size: small;
+}
+
+#chartView {
+    margin-bottom: 20px;
+}
+
+.accordion {
+  padding: 0 20px 0 0;
+}
+
+.accordion-header {
+    padding: 0 0 0 5px;
+
+}
+
+.acc-title {
+    padding-left: 5px;
+}
+
+.edit-acc-title {
+    width: 100%;
+}
+
+.ui-accordion .ui-accordion-content {
+    padding: 5px;
+    height: 61vh;
+}
+
+.tab-content {
+    overflow: auto;
+    height: 80vh;
+}
+
+#file-list-actions .btn {
+    padding: 0 5px;
+}
+
+.form-control {
+    font-size: small;
+}
+
+.file-list-sidebar {
+  color: var(--bs-body-color);
+  background-color: var(--bs-secondary-bg);
+}
+
+.tt-nowrap {
+    max-width: 950px;
+    width: 100%;
+}
