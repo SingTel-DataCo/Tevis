@@ -4,8 +4,11 @@ Tevis is the most convenient tool to do data analysis with datasets either on yo
  - Datasets with complex schema such as "Map[List, Map]" types
  - Visualize your data using charts and maps
  - Like Jupyter or Zeppelin, you can add Tabs and Query sections to accommodate for several queries.
+<img width="1489" alt="Screenshot 2023-08-04 at 12 29 01 AM" src="https://github.com/SingTel-DataCo/Tevis/assets/46181126/4fbbe749-6809-4b69-944a-48d37faf0242">
+
 Apache Spark is a powerful tool to read large datasets, and Tevis takes advantage on this library and makes it easy for
 end-users to leverage on it for analytics.
+
 Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 <img width="1498" alt="Screenshot 2023-05-10 at 10 01 20 AM" src="https://github.com/SingTel-DataCo/Tevis/assets/46181126/a544e64b-705a-43a5-8b8c-c38238b32f17">
 
@@ -13,13 +16,15 @@ Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 1. Java 8 (not compatible with 11 or later due to Scala 2.11 constraints)
 2. For Windows users, there is no need to install winutils.exe
 
-## Install and run Tevis locally on Windows
+## Install and run Tevis locally
+
+### On Windows
 
 1. Download zip file and unzip it.
 2. Double-click on run-app.bat. This will run the application and open your browser at http://localhost:8080/
 3. Default credentials are dataspark-admin/dataspark-admin.
 
-## Install and run Tevis locally on Mac/Linux
+### On Mac/Linux
 
 1. Download zip file and unzip it.
 2. Run Terminal app and go to your Tevis root directory.
@@ -37,7 +42,7 @@ Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 4. On your browser, go to http://<edge-node-ip>:8080/
 5. Default credentials are dataspark-admin/dataspark-admin.
 
-# Use cases to load datasets on Tevis
+## Use cases to load datasets on Tevis
 1. Load a single CSV or Parquet file:
    - On the "Dataset Browser" page, click on "New Dataset" and specify the path of the file.
    - Once added, you will see a new entry in the navigation pane. Expand that entry to see the single table.
@@ -55,11 +60,11 @@ Tevis is also an end-to-end pipeline visualization tool for CAPEX.
    - Once added, you will see a new entry in the navigation pane. Expand that entry to see all the tables, each corresponding to the subfolders.
    - Select a table to read -> "Read dataset" to load initial SQL and data.
 
-# Limitations
+## Limitations
 1. Locally-installed Tevis can only access local data, not remotely-stored data in S3, HDFS or via FTP.
 2. Tevis configured to utilize spark cluster can access S3/HDFS datasets but not local datasets co-located to the machine where it is installed.
 
-# Technologies used
+## Technologies used
 1. Spring Boot
 2. Scala 2.11
 3. Java 8
