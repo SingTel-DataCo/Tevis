@@ -21,14 +21,14 @@ Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 ### On Windows
 
 1. Download zip file and unzip it.
-2. Double-click on run-app.bat. This will run the application and open your browser at http://localhost:8080/
+2. Double-click on run-app.bat. This will run the application and automatically open your browser at http://localhost:8080/
 3. Default credentials are dataspark-admin/dataspark-admin.
 
 ### On Mac/Linux
 
 1. Download zip file and unzip it.
 2. Run Terminal app and go to your Tevis root directory.
-2. Run run-app.sh. This will run the application and open your browser at http://localhost:8080/
+2. Run run-app.sh. This will run the application and automatically open your browser at http://localhost:8080/
 3. Default credentials are dataspark-admin/dataspark-admin.
 
 ## Install and run Tevis on a YARN cluster
