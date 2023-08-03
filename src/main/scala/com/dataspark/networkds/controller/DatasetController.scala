@@ -1,9 +1,11 @@
 package com.dataspark.networkds.controller
 
 import com.dataspark.networkds.beans.{HFile, HFileData, QueryTx, Section, Tab, UserData, Workbook}
-import com.dataspark.networkds.service.{CacheService, FileService, ParquetService}
+import com.dataspark.networkds.service.{AppService, CacheService, FileService, ParquetService}
 import com.dataspark.networkds.util.{E2EConfigUtil, E2EVariables, Str}
-import org.apache.log4j.LogManager
+import org.apache.commons.io.FilenameUtils
+import org.apache.commons.lang3.StringUtils
+import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.{Autowired, Value}
 import org.springframework.core.io.{InputStreamResource, Resource}
 import org.springframework.http.{MediaType, ResponseEntity}
@@ -32,23 +34,25 @@ class DatasetController {
   @Autowired
   private var fileService: FileService = _
 
+  @Autowired
+  private var appService: AppService = _
+
   val log = LogManager.getLogger(this.getClass.getSimpleName)
   val readableTimeFormat = DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")
-
-  @Value("${build.version}")
-  var buildVersion: String = _
 
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
     val userData = cache.getUserData(user.getName)
     if (userData.get().parquetDir == null) {
-      userData.get().parquetDir = parquetService.dataRootPath
+      userData.get().parquetDir = appService.dataRootPath
       userData.save()
     }
     val mav: ModelAndView = new ModelAndView("dataset_browser")
-    mav.addObject("version", buildVersion)
+    mav.addObject("version", appService.buildVersion)
     mav.addObject("user", user)
     mav.addObject("dataRootDir", userData.get().parquetDir)
+    mav.addObject("jsEventsMinimize", appService.jsEventsMinimize)
+    mav.addObject("capexPageEnabled", appService.capexPageEnabled)
     mav
   }
 
@@ -130,22 +134,25 @@ class DatasetController {
   @GetMapping(path = Array("/list"), produces = Array("application/json"))
   @ResponseBody
   def listAllDirs(path: String, refresh: Boolean = false, user: Principal): String = {
+    val pathR = FilenameUtils.separatorsToUnix(path)
+    log.info(s"Listing contents of path '$pathR'")
+    val userData = cache.getUserData(user.getName)
     val dirList = if (refresh) {
-      val key = cacheKeyForParquet(path)
+      val key = cacheKeyForParquet(pathR)
       var list = cache.getParquetDir(key)
       list.keys.map(parquetService.dropView)
       cache.parquetDirs.get().dirs.remove(key)
-      list = parquetService.listHdfsDirs(path)
-      cache.putParquetDir(cacheKeyForParquet(path), list)
+      list = parquetService.listHdfsDirs(pathR)
+      cache.putParquetDir(cacheKeyForParquet(pathR), list)
       list
     }
-    else {
-      cache.getParquetDirOrElseUpdate(cacheKeyForParquet(path), () => parquetService.listHdfsDirs(path))
+    else if (pathR.nonEmpty) {
+      val list = cache.getParquetDirOrElseUpdate(cacheKeyForParquet(pathR), () => parquetService.listHdfsDirs(pathR))
+      userData.get().datasets.add(pathR)
+      userData.save()
+      list
     }
-    val userData = cache.getUserData(user.getName)
-    userData.get().datasets.add(path)
-    userData.save()
-    E2EVariables.objectMapper.writeValueAsString(buildTreeViewData(userData.get().datasets, path))
+    E2EVariables.objectMapper.writeValueAsString(buildTreeViewData(userData.get().datasets, pathR))
   }
 
   @GetMapping(path = Array("/listFiles"), produces = Array("application/json"))

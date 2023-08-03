@@ -1,7 +1,7 @@
 package com.dataspark.networkds.controller
 
 import com.dataspark.networkds.beans.UserInfo
-import com.dataspark.networkds.service.{CacheService, FileService, ParquetService}
+import com.dataspark.networkds.service.{AppService, CacheService, FileService, ParquetService}
 import com.dataspark.networkds.util.E2EVariables
 import lombok.extern.slf4j.Slf4j
 import org.apache.log4j.LogManager
@@ -32,23 +32,24 @@ class AdminController {
   private var fileService: FileService = _
 
   @Autowired
+  private var appService: AppService = _
+
+  @Autowired
   var passwordEncoder: PasswordEncoder = _
 
   val log = LogManager.getLogger(this.getClass.getSimpleName)
 
-  @Value("${build.version}")
-  var buildVersion: String = _
-
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
     val mav: ModelAndView = new ModelAndView("admin")
-    mav.addObject("version", buildVersion)
+    mav.addObject("version", appService.buildVersion)
+    mav.addObject("capexPageEnabled", appService.capexPageEnabled)
     mav.addObject("user", user)
     mav
   }
 
   @GetMapping(path = Array("/getUsers"), produces = Array("application/json"))
-  def getUsers(): String = {
+  def getUsers: String = {
     val results = Map("data" -> cache.users.get().users.map(x => {
       val u = x._2
       Seq(u.username, u.roles.mkString(", "),
@@ -112,7 +113,7 @@ class AdminController {
 
 
   @GetMapping(path = Array("/getAppEnv"), produces = Array("application/json"))
-  def getAppEnv(): String = {
+  def getAppEnv: String = {
     val results = Map("data" -> (parquetService.getSparkConfigs().map(v => Seq(v._1, "SparkConfig", v._2)) ++
       System.getenv().map(v => Seq(v._1, "SystemEnv", v._2)) ++
       System.getProperties.map(v => Seq(v._1, "AppProperty", v._2)))

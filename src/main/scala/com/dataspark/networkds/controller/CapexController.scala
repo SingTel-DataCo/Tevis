@@ -1,10 +1,11 @@
 package com.dataspark.networkds.controller
 
-import com.dataspark.networkds.service.{CacheService, ParquetService}
+import com.dataspark.networkds.service.{AppService, CacheService, ParquetService}
 import com.dataspark.networkds.util.E2EVariables
 import lombok.extern.slf4j.Slf4j
 import org.apache.log4j.LogManager
 import org.springframework.beans.factory.annotation.{Autowired, Value}
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.web.bind.annotation._
 import org.springframework.web.servlet.ModelAndView
 
@@ -12,7 +13,8 @@ import java.security.Principal
 
 @Slf4j
 @CrossOrigin(origins = Array("*"), allowedHeaders = Array("*"))
-@RequestMapping(path = Array("/capex", "", "/"))
+@ConditionalOnExpression("${capex.page.enabled:false}")
+@RequestMapping(path = Array("/capex"))
 @RestController
 class CapexController {
 
@@ -22,23 +24,24 @@ class CapexController {
   @Autowired
   private var cache: CacheService = _
 
-  val log = LogManager.getLogger(this.getClass.getSimpleName)
+  @Autowired
+  private var appService: AppService = _
 
-  @Value("${build.version}")
-  var buildVersion: String = _
+  val log = LogManager.getLogger(this.getClass.getSimpleName)
 
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
     val userData = cache.getUserData(user.getName)
     if (userData.get().capexDir == null) {
-      userData.get().capexDir = parquetService.capexRootPath
-      userData.get().capexDirHistory.add(parquetService.capexRootPath)
+      userData.get().capexDir = appService.capexRootPath
+      userData.get().capexDirHistory.add(appService.capexRootPath)
       userData.save()
     }
     val mav: ModelAndView = new ModelAndView("capex_browser")
-    mav.addObject("version", buildVersion)
+    mav.addObject("version", appService.buildVersion)
     mav.addObject("user", user)
     mav.addObject("capexDir", userData.get().capexDir)
+    mav.addObject("jsEventsMinimize", appService.jsEventsMinimize)
     mav
   }
 

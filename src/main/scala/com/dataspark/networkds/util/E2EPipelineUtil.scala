@@ -18,7 +18,7 @@ object RunnerType extends Enumeration { val SparkJob, Python = Value }
 
 case class ModuleRunner(shellScript: String, entryPointClass: String, configFilesNeeded: Seq[String], appConf: String,
   runnerType: RunnerType.Value = RunnerType.SparkJob, disabled: Boolean = false,
-  profiles: ListBuffer[String] = ListBuffer.empty) {
+  profiles: ListBuffer[String] = ListBuffer.empty, var seqNo: Int = -999) {
   override def equals(obj: Any): Boolean =
     obj match {
       case runner: ModuleRunner =>

@@ -3,7 +3,10 @@ package com.dataspark.networkds.service
 import com.dataspark.networkds.beans.{HFile, HFileData}
 import com.dataspark.networkds.config.SparkConfig
 import com.dataspark.networkds.util.{E2EConfigUtil, E2EPipelineVisualizer, SparkHadoopUtil}
+import org.apache.commons.io.FilenameUtils
+import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
+import org.apache.hadoop.io.nativeio.NativeIO
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
@@ -24,12 +27,6 @@ class ParquetService {
 
   @Autowired
   private var cache: CacheService = _
-
-  @Value("${data.root.path}")
-  var dataRootPath: String = _
-
-  @Value("${capex.root.path}")
-  var capexRootPath: String = _
 
   @Value("${query.row.limit}")
   var rowLimit: Int = _
@@ -54,7 +51,7 @@ class ParquetService {
   }
 
   def e2eVisualizer = {
-    new E2EPipelineVisualizer(spark, resolveUnsafeArrayData)
+    new E2EPipelineVisualizer(resolveUnsafeArrayData)
   }
 
   def loadFile(hfile: HFile, refresh: Boolean = false): DataFrame = {
@@ -154,12 +151,20 @@ class ParquetService {
     }
   }
 
+  /**
+   * If both dsPath and rootPath are the same then the leaf node (folder or filename) will be used;
+   * Otherwise dsPath will be trimmed by the rootPath and the remaining series of child folders will be used
+   * @param dsPath
+   * @param rootPath
+   * @return
+   */
   def generateTableName(dsPath: String, rootPath: String): String = {
 
-    val dsPath2 = E2EConfigUtil.trimProtocol(dsPath)
-    val rootPath2 = E2EConfigUtil.trimProtocol(rootPath)
+    val dsPath2 = E2EConfigUtil.trimProtocol(FilenameUtils.separatorsToUnix(dsPath))
+    val rootPath2 = E2EConfigUtil.trimProtocol(FilenameUtils.separatorsToUnix(rootPath))
 
-    dsPath2.substring(dsPath2.indexOf(rootPath2) + rootPath2.length)
+    if (dsPath2 == rootPath2) dsPath2.substring(dsPath2.lastIndexOf("/") + 1)
+    else dsPath2.substring(dsPath2.indexOf(rootPath2) + rootPath2.length)
       .replace("sub_module=", "").replace("module=", "")
       .replaceAll("\\/|=|\\+|-|\\.|<|>|\\*", " ")
       .trim.replaceAll("\\s+", "_")
@@ -196,27 +201,77 @@ class ParquetService {
 
   }
 
+  def listLocalDirsRecursive(root: File, filterFunc : Function[File, Boolean] = null): Seq[File] = {
+    val list = if (filterFunc != null) root.listFiles().filter(filterFunc) else root.listFiles()
+    list.flatMap(f => if (f.isDirectory) listLocalDirsRecursive(f) else Seq(f))
+      .toSeq
+  }
+
+  def listLocalDirs(rootDir: String): Seq[HFile] = {
+
+    val list = new ListBuffer[HFile]
+    val root = new File(rootDir)
+    if (root.isFile) {
+      val parentPath = root.getParent
+      val tableName = generateUniqueTableName(rootDir, parentPath)
+      list += HFile(root.getAbsolutePath, root.length(), tableName)
+    } else {
+      val successFiles = listLocalDirsRecursive(root, f => f.isDirectory || f.getName.endsWith("_SUCCESS"))
+      if (successFiles.nonEmpty) {
+        successFiles.map(sf => {
+          val parentPath = sf.getParent
+          val tableName = generateUniqueTableName(parentPath, rootDir)
+          list += HFile(parentPath, sf.getParent.length, tableName)
+        })
+      } else {
+        listLocalDirsRecursive(root).map(f => {
+          val filePath = f.getPath
+          val tableName = generateUniqueTableName(filePath, rootDir)
+          list += HFile(filePath, f.length(), tableName)
+        })
+      }
+    }
+    list
+  }
+
   def listHdfsDirs(rootDir: String): Map[String, HFile] = {
 
+    val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
     try {
       val list = new ListBuffer[HFile]
       val rootDirPath = new Path(rootDir)
-      if (fs.isFile(rootDirPath)) {
+      if (isWindows) { //TODO: Use this for local spark runs in Linux/Mac machines
+        listLocalDirs(rootDir).foreach(list += _)
+      }
+      else if (fs.isFile(rootDirPath)) {
         val parentPath = rootDirPath.getParent
         val tableName = generateUniqueTableName(rootDir, parentPath.toString)
         list += HFile(rootDirPath.toString, fs.getContentSummary(rootDirPath).getLength, tableName)
       } else {
         //the second boolean parameter here sets the recursion to true
+        fs.setPermission(rootDirPath, new FsPermission("777"));
         val fileStatusListIterator = fs.listFiles(rootDirPath, true)
+        val tmpList = new ListBuffer[FileStatus]
+        var successFileFound = false
         while (fileStatusListIterator.hasNext) {
           val fileStatus = fileStatusListIterator.next
+          tmpList += fileStatus
           val path = fileStatus.getPath.toString
           if (path.endsWith("/_SUCCESS")) {
+            successFileFound = true
             val parentPath = fileStatus.getPath.getParent
             val tableName = generateUniqueTableName(parentPath.toString, rootDir)
             list += HFile(parentPath.toString, fs.getContentSummary(parentPath).getLength, tableName)
           }
         }
+        if (!successFileFound) {
+          tmpList.map(f => {
+            val filePath = f.getPath
+            val tableName = generateUniqueTableName(filePath.toString, rootDir)
+            list += HFile(filePath.toString, fs.getContentSummary(filePath).getLength, tableName)
+          })
+        }
+
         // Pre-load the files, register each as a new table in the database.
         new Thread{
           override def run(): Unit = {

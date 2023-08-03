@@ -212,22 +212,24 @@ class DagViewer {
                 tmpGroupId++;
             }
         };
-        applyGroupFunc("Usage Allocation", n => n.name.startsWith("UsageAllocation"));
+        applyGroupFunc("Usage Allocation (Sector)", n => n.name.startsWith("UsageAllocation") && n.level == "sector");
+        applyGroupFunc("Usage Allocation (Site)", n => n.name.startsWith("UsageAllocation") && n.level == "site");
         applyGroupFunc("Clustering",
             n => ["IdentifySectorNeighbour", "ClusterSectorNeighbour", "Reallocation", "ReallocationAnalysis"].includes(n.name));
         applyGroupFunc("Forecasting",
             n => ["VideoUsageRatio", "SectorForecast", "FillSectorForecast", "NationwideAdjustment", "SegmentForecast",
              "GrowthRateGen", "DemandForecastTxn"].includes(n.name));
-        applyGroupFunc("Post-Process",
-            n => ["CombineUnitProperties", "CombineDecisionEngineOutputs"].includes(n.name));
+        applyGroupFunc("Post-Process (Sector)",
+            n => ["CombineUnitProperties", "CombineDecisionEngineOutputs"].includes(n.name) && n.level == "sector");
         applyGroupFunc("Target Network Utilization", n => n.name.indexOf("TargetNetworkUtilization") >= 0);
         applyGroupFunc("Pre-process FiveG",
             n => ["KpiFeatures", "DerivedGeoFeatures", "CellInventoryFeatures", "SplitUserTxnFourG",
              "XgboostRegression", "CombineFeatures", "SubscriberFeatures"].includes(n.name));
-        applyGroupFunc("Config Gen", n => ["ConfigGenerator", "HybridApproachRollUp"].includes(n.name));
+        applyGroupFunc("Config Gen (Site)", n => ["ConfigGenerator", "HybridApproachRollUp"].includes(n.name) && n.level == "site");
         applyGroupFunc("Revenue", n => ["UpgradeRevenueMultiYear", "QuarterlyRevenue"].includes(n.name));
         applyGroupFunc("Congestion", n => n.name.startsWith("Congestion_"));
-        applyGroupFunc("Unit Database", n => ["CellToUnit", "UnitProperties"].includes(n.name));
+        applyGroupFunc("Unit Database (Sector)", n => ["CellToUnit", "UnitProperties"].includes(n.name) && n.level == "sector");
+        applyGroupFunc("Unit Database (Site)", n => ["CellToUnit", "UnitProperties"].includes(n.name) && n.level == "site");
         applyGroupFunc("CurrentUsage FiveG", n => ["CurrentUsageFiveGData", "CurrentUsageFiveGVoiceSms"].includes(n.name));
         return groups;
     }
@@ -264,7 +266,7 @@ class DagViewer {
 
          $("#modulesList").html(generateModulesList());
 
-         $("#capex-version").html(data.version);
+         $("#capex-version").html("CAPEX " + data.version);
          self.updateEventListeners();
          populateJsonTab("default");
          processQueryParameters();

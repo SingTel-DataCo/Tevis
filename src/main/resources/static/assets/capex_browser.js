@@ -120,8 +120,7 @@ function showDatasetDetails(path) {
 
     if (ds == null) {
 
-        let rootDir = path.startsWith(pipelineData.inputDir) ? pipelineData.inputDir :
-            path.startsWith(pipelineData.outputDir) ? pipelineData.outputDir : null;
+        let rootDir = pipelineData.rootDirs.find(rd => path.startsWith(rd));
         $(".overlay").show();
         var startTime = Date.now();
         $.get( "/dataset/getDataFromPath",
@@ -297,8 +296,7 @@ function renderDataTable(dsName, ds, id) {
               action: function() {
                 $(".overlay").show();
                 let path = $("#dataSearchBox").val();
-                let rootDir = path.startsWith(pipelineData.inputDir) ? pipelineData.inputDir :
-                    path.startsWith(pipelineData.outputDir) ? pipelineData.outputDir : null;
+                let rootDir = pipelineData.rootDirs.find(rd => path.startsWith(rd));
                 $.get( "/dataset/refreshTable",
                     {"table" : dsName, "rootPath": rootDir}, function() {
                     $(".overlay").hide();

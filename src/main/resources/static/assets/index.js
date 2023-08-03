@@ -15,15 +15,21 @@ var wb = { tabOrder: [],
 $(function() {
     $.fn.bootstrapBtn = $.fn.button.noConflict();
     loadingDiv = $(loadingDiv);
+    $("#btn-show-modal-new-ds").click(showNewDatasetModal);
     $("#mySidebar").resizable({ handles: "e" });
     navPane.initialize();
     $('.dataTable table').DataTable();
-    $("#update-path-btn").click(function() {
-        $("#input-path").val($("#input-path-edit").val());
-        getAllDatasets($("#input-path").val());
+    $("#btn-add-dataset").click(function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if ($('#form-new-dataset')[0].reportValidity()) {
+            getAllDatasets($("#new-dataset-path").val());
+            $('.modal-new-dataset').dialog("close");
+        } else {
+        }
      });
-    $("#input-path-edit").on('keyup', function (e) {
-        if (e.key === 'Enter') $("#update-path-btn").trigger('click');
+    $("#new-dataset-path").on('keyup', function (e) {
+        if (e.key === 'Enter') $("#btn-add-dataset").trigger('click');
     });
     syncWork(function(wb){
        if (wb.tabOrder.length == 0) {
@@ -285,16 +291,18 @@ function setTableEventHandlers(tabId, elemId) {
         runQueryOnThisSection(tabId, elemId);
     });
 
-    $(elemId + " .search-box").autocomplete({
-      source: function(req, responseFn) {
-          var re = $.ui.autocomplete.escapeRegex(req.term);
-          var matcher = new RegExp("\\b" + re, "i" );
-          var a = $.grep( sqlHistory, function(item,index){
-              return matcher.test(item);
-          });
-          responseFn( a );
-      }
-    });
+    if (!jsEventsMinimize) {
+        $(elemId + " .search-box").autocomplete({
+          source: function(req, responseFn) {
+              let re = $.ui.autocomplete.escapeRegex(req.term);
+              let matcher = new RegExp("\\b" + re, "i" );
+              let a = $.grep( sqlHistory, function(item,index){
+                  return matcher.test(item);
+              });
+              responseFn( a );
+          }
+        });
+    }
 
     $(elemId + " .search-box").on('keyup', function (e) {
         if (e.key === 'Enter' && e.ctrlKey) $(elemId + " .search-btn").trigger('click');
@@ -566,6 +574,21 @@ function createSectionFromObj(tabId, tabContentId, section) {
         secTitle.show();
         editSecTitle.hide();
     });
+}
+
+function showNewDatasetModal() {
+   $("#new-dataset-path").val('');
+   $('.modal-new-dataset').dialog({
+        title: "New dataset",
+        modal: true,
+        width: 500,
+        height: 220,
+        buttons: {
+            Close: function() {
+              $( this ).dialog( "close" );
+            }
+        }
+     });
 }
 
 function shareLink(type, tabId, sectionId, elem) {

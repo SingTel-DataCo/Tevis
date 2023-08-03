@@ -25,7 +25,8 @@ import scala.collection.immutable.{ListMap, Map}
 import scala.collection.mutable
 
 case class ModuleConf(name: String, var inputPaths: Seq[String] = Seq.empty[String],
-  var outputPaths: Seq[String] = Seq.empty[String], configs: Seq[String] = Seq.empty[String])
+  var outputPaths: Seq[String] = Seq.empty[String], configs: Map[String, AnyRef] = Map.empty[String, AnyRef],
+  var confFilePath: String = "", var includes: Seq[String] = Seq.empty[String])
 
 object ModuleState extends Enumeration{
   sealed case class StateVal(name: String, color: String) extends Val(name) {
@@ -52,7 +53,8 @@ case class ModuleNode(id: Int, runner: ModuleRunner, var appConf: ModuleConf,
   }
 
   def nodeToGojsFormat(count: Int) : Map[String, Any] = {
-    Map("id" -> count, "text" -> appConf.name, "color" -> state.color)
+    Map("id" -> count, "text" -> appConf.name, "color" -> state.color,
+      "level" -> (if (runner != null) runner.profiles(0) else null))
   }
 }
 
@@ -62,9 +64,9 @@ case class Edge(from: ModuleNode, to: ModuleNode, link: String) {
   }
 }
 
-class E2EPipelineVisualizer(spark: SparkSession, resolveUnsafeArrayData: Boolean) {
+class E2EPipelineVisualizer(resolveUnsafeArrayData: Boolean) {
 
-  val log = LogManager.getLogger("E2EPipelineVisualizer")
+  val log = LogManager.getLogger(this.getClass)
   val unsafeArrayData = "org.apache.spark.sql.catalyst.expressions.UnsafeArrayData"
   import com.dataspark.networkds.util.E2EVariables._
 
@@ -135,12 +137,12 @@ class E2EPipelineVisualizer(spark: SparkSession, resolveUnsafeArrayData: Boolean
   def generateVisualization(dir: String): Map[String, Any] = {
 
     val confPath = E2EVariables.confPath(dir)
-    // Load the Config renderer for formatting the placeholders in .conf files
-    val configFormatter = new E2EConfigUtil(new File(confPath).listFiles()
-      .filter(f => f.getName.endsWith(".conf") && !f.getName.endsWith("RunConfig.conf") && !f.getName.startsWith("HybridApproach")).map(_.getAbsolutePath))
+    val runnerFolder = dir + "/planner/"
+    val allRunners = E2EConfigUtil.getAllModuleRunners(runnerFolder)
+    val unitLevelConfigMap = allRunners.groupBy(_.profiles(0)).map(x => x._1 -> x._2.flatten(_.configFilesNeeded).toSet.toSeq)
+    val moduleConfs = E2EConfigUtil.getAllModuleConfsFormattedPaths(confPath, unitLevelConfigMap)
+    val nodes = E2EConfigUtil.getAllModuleNodes(dir, allRunners, moduleConfs)
 
-    val moduleConfs = E2EConfigUtil.getAllModuleConfsFormattedPaths(dir, configFormatter)
-    val nodes = E2EConfigUtil.getAllModuleNodes(moduleConfs, dir, configFormatter)
     val moduleRunnerNodes = nodes.filter(_.id > 0).filterNot(_.runner.disabled)
 
     // Assign states on the nodes based on their upstream, downstream and runner states.
@@ -153,14 +155,17 @@ class E2EPipelineVisualizer(spark: SparkSession, resolveUnsafeArrayData: Boolean
     val disconnectedNodes = moduleRunnerNodes.filter(n => n.upstream.isEmpty && n.downstream.isEmpty)
     disconnectedNodes.foreach(x => x.state = ModuleState.Disconnected)
 
-    val inPathPrefix = configFormatter.format("${Hdfs.input}")
-    val outPathPrefix = configFormatter.format("${Hdfs.output}")
+    // Load the Config renderer for formatting the placeholders in .conf files
+    val configFormatter = new E2EConfigUtil(new File(confPath).listFiles()
+      .filter(f => f.getName.endsWith(".conf") && !f.getName.endsWith("RunConfig.conf") && !f.getName.startsWith("HybridApproach")).map(_.getAbsolutePath))
+
+    val outPathPrefix = configFormatter.format("${Hdfs.outputBasePath}")
     def trimRootPath(path: String): String = path.replaceAll(outPathPrefix, "")
 
     // Read all the input and output paths and obtain their schema and sample data
     def generateMapOutput(pathPair: (String, String), df: Seq[Map[String, Any]], dType: String): (String, Map[String, AnyRef]) = {
       if (df == null) throw new IllegalStateException(pathPair._2 + ": df is null")
-      (trimRootPath(pathPair._1), Map("format" -> dType, "path" -> trimRootPath(pathPair._2),
+      (pathPair._1, Map("format" -> dType, "path" -> pathPair._2,
         "schema" -> (if (df.isEmpty) Map.empty[String, Any] else df.head.keySet.map(x =>
           x -> Map("type" -> "String", "nullable" -> "true")).toMap),
         "data" -> df))
@@ -168,7 +173,7 @@ class E2EPipelineVisualizer(spark: SparkSession, resolveUnsafeArrayData: Boolean
 
     val allDirsRecursive = moduleRunnerNodes.flatMap(m => (m.appConf.inputPaths ++ m.appConf.outputPaths)
       .map(p => p.substring(p.indexOf("=") + 1).replaceAll("\\[|\\]", "").trim).toSet).toSet[String]
-      .map(p => (p, p))
+      .map(p => (p, configFormatter.format(p)))
       .flatten(p => {
         val dir = new File(p._2)
         if (!dir.exists() || dir.isFile) Seq(p) else {
@@ -203,8 +208,11 @@ class E2EPipelineVisualizer(spark: SparkSession, resolveUnsafeArrayData: Boolean
       "runner" -> {if (n.runner == null) n.runner else Map(
         "shellScript" -> n.runner.shellScript, "entryPointClass" -> n.runner.entryPointClass,
         "configFiles" -> n.runner.configFilesNeeded, "appConf" -> n.runner.appConf,
-        "type" -> (if (n.runner.runnerType != null) n.runner.runnerType.toString else null)) },
-      "appConf" -> n.appConf,
+        "type" -> (if (n.runner.runnerType != null) n.runner.runnerType.toString else null))},
+      "appConf" -> n.appConf.copy(name = n.appConf.name,
+        inputPaths = n.appConf.inputPaths.map(configFormatter.format),
+        outputPaths = n.appConf.outputPaths.map(configFormatter.format),
+        configs = n.appConf.configs.map(c => c._1 -> configFormatter.format(c._2))),
       "upstream" -> n.upstream.asScala.map(e => e.from.appConf.name),
       "downstream" -> n.downstream.asScala.map(e => e.to.appConf.name),
       "state" -> n.state.name,
@@ -219,8 +227,8 @@ class E2EPipelineVisualizer(spark: SparkSession, resolveUnsafeArrayData: Boolean
       "runners" -> runnerJsonMap,
       "datasets" -> dataDetails,
       "profiles" -> profiles,
-      "inputDir" -> inPathPrefix,
-      "outputDir" -> outPathPrefix)
+      "rootDirs" -> Seq("input", "outputSector", "outputSite", "outputCluster")
+        .map(x => configFormatter.format("${Hdfs." + x + "}")))
 
     log.info("Done generating pipeline-withdata.json!")
     jsonMap

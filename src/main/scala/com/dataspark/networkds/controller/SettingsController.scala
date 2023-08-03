@@ -1,7 +1,7 @@
 package com.dataspark.networkds.controller
 
 import com.dataspark.networkds.beans.UserInfo
-import com.dataspark.networkds.service.{CacheService, ParquetService}
+import com.dataspark.networkds.service.{AppService, CacheService, ParquetService}
 import com.dataspark.networkds.util.E2EVariables
 import lombok.extern.slf4j.Slf4j
 import org.apache.log4j.LogManager
@@ -24,15 +24,16 @@ class SettingsController {
   @Autowired
   var passwordEncoder: PasswordEncoder = _
 
-  val log = LogManager.getLogger(this.getClass.getSimpleName)
+  @Autowired
+  private var appService: AppService = _
 
-  @Value("${build.version}")
-  var buildVersion: String = _
+  val log = LogManager.getLogger(this.getClass.getSimpleName)
 
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
     val mav: ModelAndView = new ModelAndView("settings")
-    mav.addObject("version", buildVersion)
+    mav.addObject("version", appService.buildVersion)
+    mav.addObject("capexPageEnabled", appService.capexPageEnabled)
     mav.addObject("user", user)
     mav
   }

@@ -1,11 +1,69 @@
 # Tevis
-Tevis is an end-to-end pipeline visualization tool for CAPEX.
+Tevis is the most convenient tool to do data analysis with datasets either on your local machine or in a cluster.
+ - Large CSV or Parquet datasets
+ - Datasets with complex schema such as "Map[List, Map]" types
+ - Visualize your data using charts and maps
+ - Like Jupyter or Zeppelin, you can add Tabs and Query sections to accommodate for several queries.
+Apache Spark is a powerful tool to read large datasets, and Tevis takes advantage on this library and makes it easy for
+end-users to leverage on it for analytics.
+Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 <img width="1498" alt="Screenshot 2023-05-10 at 10 01 20 AM" src="https://github.com/SingTel-DataCo/Tevis/assets/46181126/a544e64b-705a-43a5-8b8c-c38238b32f17">
 
-Mainly built to be deployed along-side CAPEX installations, this can also be used locally.
+## Requirements
+1. Java 8 (not compatible with 11 or later due to Scala 2.11 constraints)
+2. For Windows users, there is no need to install winutils.exe
 
-1. Download TAR.gz file and unzip it.
-2. Update config/application.properties for the Spark/Hadoop configs. Skip this if you plan to run it locally.
-3. Run run-app.sh.
-4. On your browser, go to http://localhost:8080/
+## Install and run Tevis locally on Windows
+
+1. Download zip file and unzip it.
+2. Double-click on run-app.bat. This will run the application and open your browser at http://localhost:8080/
+3. Default credentials are dataspark-admin/dataspark-admin.
+
+## Install and run Tevis locally on Mac/Linux
+
+1. Download zip file and unzip it.
+2. Run Terminal app and go to your Tevis root directory.
+2. Run run-app.sh. This will run the application and open your browser at http://localhost:8080/
+3. Default credentials are dataspark-admin/dataspark-admin.
+
+## Install and run Tevis on a YARN cluster
+
+1. Download tar.gz file and copy it to the edge node of the cluster.
+2. Update config/application.properties for the correct Spark/Hadoop paths and configs.
+3. Run run-app.sh if on Linux/Mac, or run-app.bat if on Windows.
+   - This will run the application at port 8080.
+4. Ensure that your application in the edge node is accessible outside, otherwise use SSH tunneling.
+   - For SSH tunneling: ssh -L localhost:8080:localhost:8080 <edge-node-ip>
+4. On your browser, go to http://<edge-node-ip>:8080/
 5. Default credentials are dataspark-admin/dataspark-admin.
+
+# Use cases to load datasets on Tevis
+1. Load a single CSV or Parquet file:
+   - On the "Dataset Browser" page, click on "New Dataset" and specify the path of the file.
+   - Once added, you will see a new entry in the navigation pane. Expand that entry to see the single table.
+   - Click on the table -> "Read dataset" to load initial SQL and data.
+2. Load a folder containing different CSV or Parquet files
+   - On the "Dataset Browser" page, click on "New Dataset" and specify the folder path.
+   - Once added, you will see a new entry in the navigation pane. Expand that entry to see all the tables, each corresponding to the file.
+   - Select a table to read -> "Read dataset" to load initial SQL and data.
+3. Load a folder obtained from HDFS/S3 with several files (normally this folder contains a file called "_SUCCESS")
+   - On the "Dataset Browser" page, click on "New Dataset" and specify the folder path with _SUCCESS file.
+   - Once added, you will see a new entry in the navigation pane. Expand that entry to see the single table.
+   - Click on the table -> "Read dataset" to load initial SQL and data.
+4. Load a root folder containing a mix of subfolders as stated in #3
+   - On the "Dataset Browser" page, click on "New Dataset" and specify the root folder path.
+   - Once added, you will see a new entry in the navigation pane. Expand that entry to see all the tables, each corresponding to the subfolders.
+   - Select a table to read -> "Read dataset" to load initial SQL and data.
+
+# Limitations
+1. Locally-installed Tevis can only access local data, not remotely-stored data in S3, HDFS or via FTP.
+2. Tevis configured to utilize spark cluster can access S3/HDFS datasets but not local datasets co-located to the machine where it is installed.
+
+# Technologies used
+1. Spring Boot
+2. Scala 2.11
+3. Java 8
+4. Bootstrap 5
+5. JQuery
+
+If you have any questions, feel free to reach out to julius.delfino@dsanalytics.com.
