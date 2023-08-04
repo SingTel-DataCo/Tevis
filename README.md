@@ -15,7 +15,7 @@ Refer to the documentation here: https://github.com/SingTel-DataCo/Tevis/wiki
    - Large files with 100s of columns
    - Columns with very complex schema (e.g. map of list-map pairs)
 2. Query tables using SQL
-   - Use Spark SQL built-in functions: https://spark.apache.org/docs/latest/api/sql/index.html
+   - Use [Spark SQL built-in functions](https://spark.apache.org/docs/latest/api/sql/index.html)
    - Join different tables
 3. Copy query results to clipboard
 4. Download query results to CSV
@@ -25,34 +25,35 @@ Refer to the documentation here: https://github.com/SingTel-DataCo/Tevis/wiki
 8. Unmount datasets
 
 ## Requirements
-1. Java 8 (not compatible with Java 11 or later due to Scala 2.11 constraints)
-2. For Windows users, there is no need to install winutils.exe
+1. Java 8
+   > [!WARNING]
+   > Java 11 or later will not work due to Scala 2.11 constraints.
+
+For Windows users, there is no need to install winutils.exe
 
 ## Install and run Tevis locally
-Releases page: https://github.com/SingTel-DataCo/Tevis/releases
 ### On Windows
 
-1. Download zip file from the latest release and unzip it.
-2. Double-click on run-app.bat. This will run the application and automatically open your browser at http://localhost:8080/
+1. Download zip file from the [latest release](https://github.com/SingTel-DataCo/Tevis/releases) and unzip it.
+2. Double-click on `run-app.bat`. This will run the application and automatically open your browser at `http://localhost:8080/`
 3. Default credentials are dataspark-admin/dataspark-admin.
 
 ### On Mac/Linux
 
-1. Download zip file from the latest release and unzip it.
+1. Download zip file from the [latest release](https://github.com/SingTel-DataCo/Tevis/releases) and unzip it.
 2. Run Terminal app and go to your Tevis root directory.
-2. Run run-app.sh. This will run the application and automatically open your browser at http://localhost:8080/
-3. Default credentials are dataspark-admin/dataspark-admin.
+2. Run `run-app.sh`. This will run the application and automatically open your browser at `http://localhost:8080/`
+3. Default credentials are `dataspark-admin` / `dataspark-admin`.
 
 ## Install and run Tevis on a YARN cluster
 
 1. Download tar.gz file and copy it to the edge node of the cluster.
-2. Update config/application.properties for the correct Spark/Hadoop paths and configs.
-3. Run run-app.sh if on Linux/Mac, or run-app.bat if on Windows.
-   - This will run the application at port 8080.
-4. Ensure that your application in the edge node is accessible outside, otherwise use SSH tunneling.
-   - For SSH tunneling: ssh -L localhost:8080:localhost:8080 <edge-node-ip>
-4. On your browser, go to http://<edge-node-ip>:8080/
-5. Default credentials are dataspark-admin/dataspark-admin.
+2. Rename `config/application-cluster.properties` to `config/application.properties`, and update with the correct and necessary Spark/Hadoop paths and configs.
+3. Run `run-app.sh`. This will run the application at port `8080`.
+4. Ensure that your application is accessible outside, otherwise use SSH tunneling.
+   - For SSH tunneling: `ssh -L localhost:8080:localhost:8080 <edge-node-ip>`
+4. On your browser, go to `http://<edge-node-ip>:8080/`
+5. Default credentials are `dataspark-admin` / `dataspark-admin`.
 
 ## Use cases to load datasets on Tevis
 1. Load a single CSV or Parquet file:
