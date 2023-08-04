@@ -1,9 +1,5 @@
 # Tevis
 Use Tevis to do data analysis with datasets either on your local machine or in a cluster.
- - Large CSV or Parquet datasets
- - Datasets with complex schema such as "Map[List, Map]" types
- - Visualize your data using charts and maps
- - Like Jupyter or Zeppelin, you can add Tabs and Query sections to accommodate for several queries.
 <img width="1489" alt="Screenshot 2023-08-04 at 12 29 01 AM" src="https://github.com/SingTel-DataCo/Tevis/assets/46181126/4fbbe749-6809-4b69-944a-48d37faf0242">
 
 Apache Spark is a powerful tool to read large datasets, and Tevis takes advantage on this library and makes it easy for
@@ -14,18 +10,20 @@ Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 
 ## Dataset Browser Features
 1. Load CSV/Parquet files and auto-assign table names
+   - Large files with 100s of columns
+   - Columns with very complex schema (e.g. map of list-map pairs)
 2. Query tables using SQL
    - Use Spark SQL built-in functions: https://spark.apache.org/docs/latest/api/sql/index.html
    - Join different tables
 3. Copy query results to clipboard
 4. Download query results to CSV
 5. Visualize query results with charts/maps
-6. Add new query sections and tabs
+6. Add new query sections and tabs - use it like you would on Jupyter/Zeppelin notebooks
 7. Save your workspace so tabs and query sections are persisted
 8. Unmount datasets
 
 ## Requirements
-1. Java 8 (not compatible with 11 or later due to Scala 2.11 constraints)
+1. Java 8 (not compatible with Java 11 or later due to Scala 2.11 constraints)
 2. For Windows users, there is no need to install winutils.exe
 
 ## Install and run Tevis locally
