@@ -1,5 +1,5 @@
 # Tevis
-Tevis is the most convenient tool to do data analysis with datasets either on your local machine or in a cluster.
+Use Tevis to do data analysis with datasets either on your local machine or in a cluster.
  - Large CSV or Parquet datasets
  - Datasets with complex schema such as "Map[List, Map]" types
  - Visualize your data using charts and maps
@@ -7,10 +7,21 @@ Tevis is the most convenient tool to do data analysis with datasets either on yo
 <img width="1489" alt="Screenshot 2023-08-04 at 12 29 01 AM" src="https://github.com/SingTel-DataCo/Tevis/assets/46181126/4fbbe749-6809-4b69-944a-48d37faf0242">
 
 Apache Spark is a powerful tool to read large datasets, and Tevis takes advantage on this library and makes it easy for
-end-users to leverage on it for analytics.
+end-users to leverage on it for analytics. Using the common ANSI SQL, users can query, filter, join tables among other features, and build complex queries and utilize Spark SQL functions.
 
 Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 <img width="1498" alt="Screenshot 2023-05-10 at 10 01 20 AM" src="https://github.com/SingTel-DataCo/Tevis/assets/46181126/a544e64b-705a-43a5-8b8c-c38238b32f17">
+
+## Dataset Browser Features
+1. Load CSV/Parquet files and auto-assign table names
+2. Query tables using SQL
+   - Use Spark SQL built-in functions: https://spark.apache.org/docs/latest/api/sql/index.html
+   - Join different tables
+3. Copy query results to clipboard
+4. Download query results to CSV
+5. Visualize query results with charts/maps
+6. Add new query sections and tabs
+7. Unmount datasets
 
 ## Requirements
 1. Java 8 (not compatible with 11 or later due to Scala 2.11 constraints)
