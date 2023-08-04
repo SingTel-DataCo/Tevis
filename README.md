@@ -8,6 +8,8 @@ end-users to leverage on it for analytics. Using the common ANSI SQL, users can 
 Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 <img width="1498" alt="Screenshot 2023-05-10 at 10 01 20 AM" src="https://github.com/SingTel-DataCo/Tevis/assets/46181126/a544e64b-705a-43a5-8b8c-c38238b32f17">
 
+Refer to the documentation here: https://github.com/SingTel-DataCo/Tevis/wiki
+
 ## Dataset Browser Features
 1. Load CSV/Parquet files and auto-assign table names
    - Large files with 100s of columns
@@ -27,16 +29,16 @@ Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 2. For Windows users, there is no need to install winutils.exe
 
 ## Install and run Tevis locally
-
+Releases page: https://github.com/SingTel-DataCo/Tevis/releases
 ### On Windows
 
-1. Download zip file and unzip it.
+1. Download zip file from the latest release and unzip it.
 2. Double-click on run-app.bat. This will run the application and automatically open your browser at http://localhost:8080/
 3. Default credentials are dataspark-admin/dataspark-admin.
 
 ### On Mac/Linux
 
-1. Download zip file and unzip it.
+1. Download zip file from the latest release and unzip it.
 2. Run Terminal app and go to your Tevis root directory.
 2. Run run-app.sh. This will run the application and automatically open your browser at http://localhost:8080/
 3. Default credentials are dataspark-admin/dataspark-admin.
