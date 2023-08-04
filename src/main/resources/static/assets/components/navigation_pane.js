@@ -1,6 +1,7 @@
 class NavigationPane {
 
     initialize() {
+        let self = this;
         let btnActions = $("#file-list-actions");
         $("#file-list-actions button").tooltip()
         btnActions.find(".btn-read").click(function(e){
@@ -17,7 +18,7 @@ class NavigationPane {
                 $.post( "/dataset/unmount", {path: rootDir}, function( data ) {
                     $(".overlay").hide();
                     treeData = data;
-                    navPane.updateNavPane(data);
+                    self.updateNavPane(data);
 
                 }).fail(function (xhr, status, error) {
                     $(".overlay").hide();
@@ -41,7 +42,7 @@ class NavigationPane {
                 $.get( "/dataset/list", {path: rootDir, refresh: true}, function( data ) {
                     $(".overlay").hide();
                     treeData = data;
-                    navPane.updateNavPane(treeData);
+                    self.updateNavPane(treeData);
 
                 }).fail(function (xhr, status, error) {
                     $(".overlay").hide();
@@ -50,11 +51,16 @@ class NavigationPane {
             }
         });
         btnActions.tooltip();
-        $("#file-list-filter").keyup(function() {
-            let textToSearch = $(this).val().toLowerCase();
-            let filteredTreeData = navPane.filterTreeData(treeData, textToSearch);
-            navPane.updateNavPane(filteredTreeData, true);
+
+        $("#btn-file-filter").click(function(e) {
+            e.preventDefault();
+            self.onSearchDataset(self);
         });
+        if (!jsEventsMinimize) {
+            $("#file-list-filter").keyup(function(e) {
+              self.onSearchDataset(self);
+            });
+        }
 
         $(document).on('click', function (e) {
             $('[data-bs-toggle="popover"]').each(function () {
@@ -129,5 +135,11 @@ class NavigationPane {
             rNodeClone.tags = [cNodes.length];
             return rNodeClone;
         });
+    }
+
+    onSearchDataset(parent) {
+        let textToSearch = $("#file-list-filter").val().toLowerCase();
+        let filteredTreeData = parent.filterTreeData(treeData, textToSearch);
+        parent.updateNavPane(filteredTreeData, true);
     }
 }

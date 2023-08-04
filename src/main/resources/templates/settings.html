@@ -8,7 +8,7 @@
 
 <body>
 <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-    <a class="navbar-brand" href="/capex">
+    <a class="navbar-brand" href="/">
         <div><span id="sidebarHeader">
             <img src="/assets/images/logo-header.png" width="120" style="padding-left: 20px" /></span> <span id="version">[(${version})]</span>
         </div>
@@ -23,7 +23,9 @@
                     Settings
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/capex">Module Browser</a></li>
+                    <div th:if="${capexPageEnabled}">
+                        <li><a class="dropdown-item" href="/capex">Module Browser</a></li>
+                    </div>
                     <li><a class="dropdown-item" href="/dataset">Dataset Browser</a></li>
                 </ul>
             </li>

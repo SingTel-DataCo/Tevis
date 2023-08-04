@@ -1,5 +1,6 @@
 package com.dataspark.networkds.controller
 
+import com.dataspark.networkds.service.AppService
 import com.dataspark.networkds.util.E2EVariables
 import org.apache.log4j.LogManager
 import org.springframework.beans.factory.annotation.{Autowired, Value}
@@ -24,11 +25,8 @@ class LoginController {
 
   val log = LogManager.getLogger(this.getClass.getSimpleName)
 
-  @Value("${build.version}")
-  var buildVersion: String = _
-
-  @Value("${admin.email}")
-  var adminEmail: String = _
+  @Autowired
+  private var appService: AppService = _
 
   @RequestMapping(path = Array(""))
   def index(@RequestParam(value = "error", defaultValue = "false") error: String, req: HttpServletRequest): ModelAndView = {
@@ -37,7 +35,7 @@ class LoginController {
       val ex = req.getSession.getAttribute("SPRING_SECURITY_LAST_EXCEPTION").asInstanceOf[Exception]
       model.addObject("error", ex.getMessage)
     }
-    model.addObject("admin_email", adminEmail)
+    model.addObject("admin_email", appService.adminEmail)
     model
   }
 }

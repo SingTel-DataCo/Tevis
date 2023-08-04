@@ -1,17 +1,17 @@
 <assembly>
     <id>batch</id>
     <formats>
-        <format>tar.gz</format>
+        <format>zip</format>
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
 
     <fileSets>
         <fileSet>
-            <directory>src/main/resources</directory>
+            <directory>${project.basedir}/target/classes</directory>
             <outputDirectory>config</outputDirectory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
+            <excludes>
+                <exclude>com/**</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>.</directory>
@@ -39,6 +39,11 @@
             <outputDirectory>.</outputDirectory>
             <fileMode>0755</fileMode>
             <lineEnding>unix</lineEnding>
+        </file>
+        <file>
+            <source>src/shl/run-app.bat</source>
+            <outputDirectory>.</outputDirectory>
+            <fileMode>0755</fileMode>
         </file>
     </files>
 

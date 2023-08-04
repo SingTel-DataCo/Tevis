@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:fragment="headerFiles">
-    <title>TeVis - Capex E2E Pipeline Visualization</title>
+    <title>TeVis - E2E Pipeline Visualization</title>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -29,7 +29,9 @@
 
     <script src="/assets/common.js"></script>
     <link rel="stylesheet" href="/assets/common.css" />
-
+    <script th:inline="javascript">
+        let jsEventsMinimize = /*[[${jsEventsMinimize}]]*/ false;
+    </script>
 </head>
 <body>
 <div th:fragment="rowDetailsModal" id="rowDetailsTemplate">
@@ -46,6 +48,16 @@
             <input type="text" id="link-box" class="form-control" readonly>
             <button class="btn btn-outline-secondary btn-copy-link" type="button"><i class="fa fa-copy"></i></button>
         </div>
+    </div>
+</div>
+
+<div th:fragment="newDatasetModal" id="newDatasetTemplate">
+    <div class="modal modal-new-dataset" role="dialog">
+        <form id="form-new-dataset" class="input-group mb-3 pt-3">
+            <input type="text" id="new-dataset-path" class="form-control" required>
+            <button id="btn-add-dataset" class="btn btn-outline-secondary" type="submit"><i class="fa fa-add"></i></button>
+        </form>
+        <div class='loading d-none lds-ellipsis'><div></div><div></div><div></div><div></div></div>
     </div>
 </div>
 
