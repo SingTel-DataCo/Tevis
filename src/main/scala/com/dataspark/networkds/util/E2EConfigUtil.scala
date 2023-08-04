@@ -368,8 +368,7 @@ object E2EConfigUtil {
         .filter(_.nonEmpty)).distinct
   }
 
-  def getVersion(dir: String): String = {
-    val rootDir = dir + "/planner/"
+  def getVersion(rootDir: String): String = {
     val versionProperty = IOUtils.readLines(new FileReader(rootDir + "runner_configs"))
       .asScala.find(_.trim.startsWith("VERSION")).get
     versionProperty.split("=")(1).replaceAll("\"", "")

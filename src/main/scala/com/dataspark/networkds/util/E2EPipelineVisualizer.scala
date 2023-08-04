@@ -219,7 +219,7 @@ class E2EPipelineVisualizer(resolveUnsafeArrayData: Boolean) {
       "profiles" -> (if (n.runner == null) Seq.empty else n.runner.profiles)))): _*)
 
     val jsonMap = Map(
-      "version" -> E2EConfigUtil.getVersion(dir),
+      "version" -> E2EConfigUtil.getVersion(runnerFolder),
       "nodeStates" -> ModuleState.values.asInstanceOf[Set[StateVal]].map(x => (x.name, x.color)).toMap,
       "moduleNodes" -> allNodes.map(x => x.nodeToGojsFormat(x.id)),
       "links" -> allNodes.flatMap(x => x.downstreamLinksToGojsFormat())

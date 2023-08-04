@@ -21,7 +21,8 @@ Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 4. Download query results to CSV
 5. Visualize query results with charts/maps
 6. Add new query sections and tabs
-7. Unmount datasets
+7. Save your workspace so tabs and query sections are persisted
+8. Unmount datasets
 
 ## Requirements
 1. Java 8 (not compatible with 11 or later due to Scala 2.11 constraints)
