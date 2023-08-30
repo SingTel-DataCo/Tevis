@@ -14,31 +14,6 @@ function getLinkTooltipText(link) {
     return link.text + "\n\nFrom: " + link.fromName + "\nTo: " + link.toName;
 }
 
-function jsonToTable(jsonObj, parentClass = "") {
-    var text = "<table class='table table-sm propertiesTable hover " + parentClass + "' border='1'>"
-    if (jsonObj == null || jsonObj.length == 0) return "None";
-    for (var x in jsonObj) {
-        var rowText = (typeof jsonObj[x] === 'object'?
-            jsonToTable(jsonObj[x], x) : escapeHtml(jsonObj[x]));
-        text += "<tr><td class='key'>" + x + "</td><td class='value " + x + "-value'>" + rowText + "</td></tr>";
-    }
-    text += "</table>"
-    return text;
-}
-
-function schemaToTable(jsonObj) {
-    var text = "<table class='table table-sm small hover' border='1'>"
-    text += "<thead class='ui-widget-header'><tr><th></th><th>Column</th><th>Type</th><th>Nullable</th></tr></thead>";
-    var cnt = 0;
-    var body = ""
-    for (var x in jsonObj) {
-        body += "<tr><td class='index'>" + (++cnt) + "</td><td class='key'>" + x + "</td><td>"
-            + escapeHtml(jsonObj[x].type.replaceAll(",", ", ")) + "</td><td>" + jsonObj[x].nullable + "</td></tr>";
-    }
-    text += "<tbody class='ui-widget-content'>" + body + "</tbody></table>"
-    return text;
-}
-
 function resetSidebar() {
     $("#detailsViewTitle").html("Click on a module or link to view its details.");
     $("#moduleDescription").html("");
@@ -563,23 +538,6 @@ $(function() {
         });
     });
 });
-
-var entityMap = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;',
-  '/': '&#x2F;',
-  '`': '&#x60;',
-  '=': '&#x3D;'
-};
-
-function escapeHtml (string) {
-  return String(string).replace(/[&<>"'`=\/]/g, function (s) {
-    return entityMap[s];
-  });
-}
 
 function processQueryParameters() {
     var urlParams = new URLSearchParams(window.location.search);

@@ -306,6 +306,10 @@ function setTableEventHandlers(tabId, elemId) {
 
     $(elemId + " .search-box").on('keyup', function (e) {
         if (e.key === 'Enter' && e.ctrlKey) $(elemId + " .search-btn").trigger('click');
+        else if (!jsEventsMinimize) {
+            $(this).height( 'auto' );
+            $(this).height( $(elemId + " .search-box")[0].scrollHeight );
+        }
     });
 
     $(elemId + " .btn-delete-section").click(function () {
@@ -432,6 +436,10 @@ function createTabs() {
         });
     });
     $(".search-btn").tooltip();
+    //Auto-resize textarea based on content: https://stackoverflow.com/a/13085420/3369952
+    $(".search-box").each(function(textarea) {
+        $(this).height( $(this)[0].scrollHeight );
+    });
 }
 
 function createNewTab(tabCounter, isMasterTab) {

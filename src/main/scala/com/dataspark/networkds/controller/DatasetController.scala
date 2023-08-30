@@ -4,7 +4,6 @@ import com.dataspark.networkds.beans.{HFile, HFileData, QueryTx, Section, Tab, U
 import com.dataspark.networkds.service.{AppService, CacheService, FileService, ParquetService}
 import com.dataspark.networkds.util.{E2EConfigUtil, E2EVariables, Str}
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.lang3.StringUtils
 import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.{Autowired, Value}
 import org.springframework.core.io.{InputStreamResource, Resource}
@@ -14,9 +13,9 @@ import org.springframework.web.servlet.ModelAndView
 
 import java.security.Principal
 import java.sql.SQLException
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneId}
 import java.time.format.DateTimeFormatter
-import java.util.Date
+import java.sql.Timestamp
 import javax.servlet.http.HttpServletResponse
 import scala.util.Random
 
@@ -73,7 +72,7 @@ class DatasetController {
     null
   }
 
-  def cacheKeyForParquet(rootPath: String): String = "parquetDir_" + E2EConfigUtil.trimProtocol(rootPath)
+  def cacheKeyForParquet(rootPath: String): String = parquetService.cacheKeyForParquet(rootPath)
 
   @GetMapping(path = Array("/getDataFromTable"), produces = Array("application/json"))
   @ResponseBody
@@ -96,15 +95,14 @@ class DatasetController {
     if (hFile == null) {
       throw new SQLException(s"Dataset path '$path' doesn't exist.")
     }
-    // Always refresh the table; it's just a single table anyway so it's not
-    E2EVariables.objectMapper.writeValueAsString(parquetService.readSchemaAndData(hFile, true))
+    E2EVariables.objectMapper.writeValueAsString(parquetService.readSchemaAndData(hFile))
   }
 
   def processSqlResponse(user: Principal, results: HFileData): String = {
     val readableTime = LocalDateTime.now.format(readableTimeFormat)
     val queryId = s"${user.getName}_$readableTime"
-    val queryTx = QueryTx(queryId, new Date(), user.getName, results)
-    fileService.writeToFileAsync(queryTx)
+    val queryTx = QueryTx(queryId, new Timestamp(System.currentTimeMillis()), user.getName, results)
+    fileService.writeQueryTxAsync(queryTx)
     E2EVariables.objectMapper.writeValueAsString(queryTx)
   }
 
@@ -158,7 +156,11 @@ class DatasetController {
   @GetMapping(path = Array("/listFiles"), produces = Array("application/json"))
   @ResponseBody
   def listFiles(path: String, user: Principal): String = {
-    val results = Map("data" -> parquetService.listFiles(path))
+    val results = Map("data" -> cache.getDsFiles(path).map(f => {
+      val dateFormatted = f.date.toInstant.atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+      Seq(f.filename, dateFormatted, f.size, path + "/" + f.filename)
+    }))
     E2EVariables.objectMapper.writeValueAsString(results)
   }
 
@@ -177,7 +179,16 @@ class DatasetController {
     val hFile = cache.getParquetDir(cacheKeyForParquet(rootPath))(table)
     parquetService.loadFile(hFile, true)
     cache.parquetDirs.save()
+    cache.files.get().dirs.put(hFile.path, parquetService.listFiles(hFile.path))
+    cache.files.save()
     true
+  }
+
+  @GetMapping(path = Array("/schema"), produces = Array("application/json"))
+  @ResponseBody
+  def schema(@RequestParam table: String, @RequestParam rootPath: String): String = {
+    val hFile = cache.getParquetDir(cacheKeyForParquet(rootPath))(table)
+    E2EVariables.objectMapper.writeValueAsString(hFile.schema)
   }
 
   @PostMapping(path = Array("/unmount"), produces = Array("application/json"))
@@ -209,14 +220,15 @@ class DatasetController {
     E2EVariables.objectMapper.writeValueAsString(Map("shareId" -> shareId))
   }
 
-  case class TreeViewNode(text: String, path: String = null, nodes: Seq[TreeViewNode] = null, tags: Seq[Int] = null)
+  case class TreeViewNode(text: String, path: String = null, format: String = null, size: String = null,
+                          nodes: Seq[TreeViewNode] = null, tags: Seq[Int] = null)
 
   def buildTreeViewData(dirKeys: Iterable[String], selectedFolder: String = ""): AnyRef = {
     val ord = Ordering.by { foo: HFile => foo.path }
     dirKeys.toSeq.sorted
       .map(d => d -> cache.getParquetDirOrElseUpdate(cacheKeyForParquet(d), () => parquetService.listHdfsDirs(d)).values)
       .map(x => {
-        val nodes = x._2.toSeq.sorted(ord).map(c => TreeViewNode(c.table, c.path))
+        val nodes = x._2.toSeq.sorted(ord).map(c => TreeViewNode(c.table, c.path, c.format, "%,d".format(c.size) + " B"))
         TreeViewNode(x._1, nodes = nodes, tags = Seq(nodes.size))
       })
   }

@@ -45,6 +45,12 @@
             <outputDirectory>.</outputDirectory>
             <fileMode>0755</fileMode>
         </file>
+        <file>
+            <source>src/shl/stop-app.sh</source>
+            <outputDirectory>.</outputDirectory>
+            <fileMode>0755</fileMode>
+            <lineEnding>unix</lineEnding>
+        </file>
     </files>
 
     <dependencySets>

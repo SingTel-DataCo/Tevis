@@ -6,7 +6,7 @@
     <groupId>com.dataspark</groupId>
     <artifactId>tevis</artifactId>
     <name>Tevis</name>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -35,7 +35,7 @@
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
-            <artifactId>scala-reflect</artifactId>
+            <artifactId>scala-compiler</artifactId>
             <version>${scalaVersion}</version>
         </dependency>
         <dependency>
@@ -216,6 +216,13 @@
             <version>1.9</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest_${scalaMajorVersion}</artifactId>
+            <version>3.0.1</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 
@@ -387,15 +394,6 @@
                 <updatePolicy>always</updatePolicy>
             </releases>
             <url>https://repo1.maven.org/maven2</url>
-        </repository>
-        <repository>
-            <id>dataspark-maven</id>
-            <name>dataspark-maven</name>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-            <url>https://artifactory.datasparkanalytics.com/dataspark-maven</url>
         </repository>
     </repositories>
 

@@ -1,7 +1,7 @@
 package com.dataspark.networkds.util
 
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-
+import org.apache.spark.sql.types.{StructType, StructField, StringType}
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.collection.immutable.ListMap
@@ -23,8 +23,6 @@ object Str {
    */
   def parseSeqStringToDF(spark: SparkSession, filePath: String, delim: String):
   DataFrame = {
-    import spark.implicits._
-    import org.apache.spark.sql.types.{StructType, StructField, StringType}
     val lines = parseCsvFile(filePath)
     val headers = lines.head.split(delim).map(StructField(_, StringType, true))
     val schema = StructType(headers)

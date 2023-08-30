@@ -43,12 +43,34 @@ class NavigationPane {
                     $(".overlay").hide();
                     treeData = data;
                     self.updateNavPane(treeData);
-
                 }).fail(function (xhr, status, error) {
                     $(".overlay").hide();
                     alert(error + "\n" + xhr.responseText);
                 });
             }
+        });
+
+        btnActions.find(".btn-schema").click(function(e){
+            $('.popover').hide();
+            let rootDir = btnActions.attr("rootDir");
+            $(".overlay").show();
+            if (btnActions.attr("act-on") == "file-item") {
+                let node = { text: btnActions.attr("filename"), path: rootDir };
+                $.get( "/dataset/schema",
+                    {"table" : node.text, "rootPath": rootDir}, function(schema) {
+                    $(".overlay").hide();
+                    $('.modal-schema .schema-table').text(node.text);
+                    $('.modal-schema .schema').html(schemaToTable(schema));
+                    $('.modal-schema').dialog({
+                        title: "Schema - " + node.text,
+                        width: 400,
+                        height: 400
+                     });
+                }).fail(function (xhr, status, error) {
+                    $(".overlay").hide();
+                    alert(error + "\n" + xhr.responseText);
+                });
+             }
         });
         btnActions.tooltip();
 
@@ -83,7 +105,10 @@ class NavigationPane {
             let rnBtnToggle = '<span class="btn-toggle rounded" style="padding-bottom: 10px" data-bs-toggle="collapse" data-bs-target="#'
              + collapseId + '" ><span class="file-group-name" data-bs-toggle="popover" title="' + rn.text + '" data-bs-content="<div class=\'btn-actions\'></div>Path: ' + rn.path + '">' + truncate(rn.text, 45) + '</span>' + rnBadge + '</span>';
             let liList = rn.nodes.map(cn => {
-                return '<li class="file-item rounded"><i class="fa fa-table" style="color: #999"></i> <span class="filename-label" data-bs-toggle="popover" title="' + cn.text + '" data-bs-content="<div class=\'btn-actions\'></div>Path: ' + cn.path + '" path="' + cn.path + '">' + cn.text + '</span></li>';
+                let props = '<span class=\'text-muted\'>Path: </span><span>' + cn.path + '</span><br/>' +
+                    '<span class=\'text-muted\'>Format: </span><span>' + cn.format + '</span><br/>' +
+                    '<span class=\'text-muted\'>Size: </span><span>' + cn.size + '</span><br/>';
+                return '<li class="file-item rounded"><i class="fa fa-table" style="color: #999"></i> <span class="filename-label" data-bs-toggle="popover" title="' + cn.text + '" data-bs-content="<div class=\'btn-actions\'></div>' + props + '" path="' + cn.path + '">' + cn.text + '</span></li>';
             }).join('');
             let show = expand ? " show" : "";
             let hideRootNode = rn.tags[0] == 0 ? " d-none" : "";
@@ -116,10 +141,10 @@ class NavigationPane {
           animation: false}).on('shown.bs.popover', function (e) {
                  $('[data-bs-toggle="popover"]').not(this).popover('hide');
                  if (btnActions.attr("act-on") == "file-item") {
-                    $('.btn-read').show(); $('.btn-unmount').hide();
+                    $('.btn-read').show(); $('.btn-schema').show(); $('.btn-unmount').hide();
                     $('.btn-refresh').attr('data-bs-original-title', "Refresh dataset");
                  } else {
-                    $('.btn-read').hide(); $('.btn-unmount').show();
+                    $('.btn-read').hide(); $('.btn-schema').hide(); $('.btn-unmount').show();
                     $('.btn-refresh').attr('data-bs-original-title', "Refresh collection");
                  }
                  let popoverId = $(this).attr("aria-describedby");

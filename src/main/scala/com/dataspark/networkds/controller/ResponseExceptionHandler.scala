@@ -17,8 +17,7 @@ class ResponseExceptionHandler extends ResponseEntityExceptionHandler {
   private val log = org.slf4j.LoggerFactory.getLogger(classOf[ResponseExceptionHandler])
 
   @ExceptionHandler(Array(classOf[Exception])) protected def handleGeneralError(ex: Exception, request: WebRequest): ResponseEntity[AnyRef] = {
-    val finalMsg = if (StringUtils.isNotEmpty(ex.getMessage)) ex.getMessage
-    else ExceptionUtils.getRootCauseMessage(ex)
+    val finalMsg = ExceptionUtils.getRootCauseMessage(ex)
     log.error(ex.getMessage, ex)
     handleExceptionInternal(ex, finalMsg, new HttpHeaders, HttpStatus.INTERNAL_SERVER_ERROR, request)
   }

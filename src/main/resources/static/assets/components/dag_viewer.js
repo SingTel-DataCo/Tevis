@@ -214,8 +214,10 @@ class DagViewer {
         };
         applyGroupFunc("Usage Allocation (Sector)", n => n.name.startsWith("UsageAllocation") && n.level == "sector");
         applyGroupFunc("Usage Allocation (Site)", n => n.name.startsWith("UsageAllocation") && n.level == "site");
-        applyGroupFunc("Clustering",
-            n => ["IdentifySectorNeighbour", "ClusterSectorNeighbour", "Reallocation", "ReallocationAnalysis"].includes(n.name));
+        applyGroupFunc("Clustering (Sector)",
+            n => ["IdentifySectorNeighbour", "ClusterSectorNeighbour", "Reallocation", "ReallocationAnalysis"].includes(n.name) && n.level == "sector");
+        applyGroupFunc("Clustering (Site)",
+            n => ["ReallocationAnalysis"].includes(n.name) && n.level == "site");
         applyGroupFunc("Forecasting",
             n => ["VideoUsageRatio", "SectorForecast", "FillSectorForecast", "NationwideAdjustment", "SegmentForecast",
              "GrowthRateGen", "DemandForecastTxn"].includes(n.name));

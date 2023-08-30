@@ -1,15 +1,15 @@
 package com.dataspark.networkds.beans
 
-import java.util.Date
-import scala.collection.Map
+import java.sql.Timestamp
 import scala.collection.immutable.ListMap
-import scala.collection.mutable
+import scala.collection.{Map, mutable}
 import scala.collection.mutable.{Buffer, Set}
 
 case class Users(var users: mutable.Map[String, UserInfo] = mutable.Map())
 
 case class UserInfo(username: String, password: String, roles: Seq[String], isDisabled: Boolean = false,
-                    lastCreated: Date = new Date(), lastLogin: Date = new Date())
+                    lastCreated: Timestamp = new Timestamp(System.currentTimeMillis()),
+                    lastLogin: Timestamp = new Timestamp(System.currentTimeMillis()))
 
 case class UserData(var capexDir: String = null, var parquetDir: String = null, var capexDirHistory: mutable.Set[String] = mutable.Set(),
   var datasets: Set[String] = Set(), var sqlHistory: Buffer[String] = Buffer(), var workbook: Workbook = Workbook())
@@ -25,10 +25,15 @@ case class ChartModel(chartType: String, selectedColumns: Seq[String], extraOpti
 
 case class ParquetDirs(dirs: mutable.Map[String, Map[String, HFile]] = mutable.Map())
 
+//A hadoop folder with "_SUCCESS" file in it
 case class HFile(path: String, size: Long,
                  var table: String = "", var format: String = "parquet",
                  var schema: ListMap[String, Any] = null)
 
-case class QueryTx(queryId: String, date: Date, user: String, query: HFileData)
+//List of hadoop files and their file properties (e.g. timestamp, size)
+case class DsFiles(dirs: mutable.Map[String, Seq[DsFile]] = mutable.Map())
+case class DsFile(filename: String, date: Timestamp, size: Long, path: String = null)
+
+case class QueryTx(queryId: String, date: Timestamp, user: String, query: HFileData)
 
 case class HFileData(data: AnyRef, format: String, path: String, schema: ListMap[String, Any], sql: String)

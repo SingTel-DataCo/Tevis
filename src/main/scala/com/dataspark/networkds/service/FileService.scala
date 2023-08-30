@@ -14,13 +14,31 @@ class FileService {
   @Value("${data_dir}")
   var dataDir: String = _
 
-  def writeToFileAsync(queryTx: QueryTx): Unit = {
+  def writeQueryTxAsync(queryTx: QueryTx): Unit = {
     new Thread{
-      override def run: Unit = {
+      override def run(): Unit = {
         FileUtils.write(new File(dataDir + "/" + queryTx.queryId + ".json"),
           E2EVariables.objectMapper.writeValueAsString(queryTx), "UTF-8")
       }
     }.start()
+  }
+
+
+  def writeCapexDirAsync(dir: String, capexDirInfo: Map[String, Any]): Unit = {
+    new Thread {
+      override def run(): Unit = {
+        FileUtils.write(new File(dataDir + "/capex/dag_" + dir.hashCode + ".json"),
+          E2EVariables.objectMapper.writeValueAsString(capexDirInfo), "UTF-8")
+      }
+    }.start()
+  }
+
+  def readCapexDags(): Seq[String] = {
+    val objMapper = E2EVariables.objectMapper
+    new File(dataDir + "/capex").listFiles(new FilenameFilter() {
+      def accept(dir: File, fileName: String): Boolean = fileName.matches("dag_.*.json")
+    }).map(f => objMapper.readValue(f, classOf[Map[String, Map[String, Any]]]))
+      .flatMap(m => m("runners").values.map(objMapper.writeValueAsString))
   }
 
   def readQueryTx(queryId: String): Option[QueryTx] = {

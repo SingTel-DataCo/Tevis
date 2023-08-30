@@ -53,7 +53,7 @@ class StartupConfig {
       else if (operatingSystemName.contains("win")) command = Array("rundll32 url.dll,FileProtocolHandler " + url)
       else if (operatingSystemName.contains("mac")) command = Array("open " + url)
       else {
-        System.out.println("an unknown operating system!!")
+        log.warn(s"Unable to launch a browser with your operating system: $operatingSystemName")
         return
       }
 
@@ -61,7 +61,7 @@ class StartupConfig {
       else runtime.exec(command(0)) // windows or mac
       catch {
         case e: IOException =>
-          e.printStackTrace()
+          log.warn(s"Unable to launch a browser: ${e.getMessage}")
       }
     }
   }

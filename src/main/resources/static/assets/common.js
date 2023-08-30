@@ -287,3 +287,46 @@ let truncate = function (fullStr, strLen, separator) {
            separator +
            fullStr.substr(fullStr.length - backChars);
 };
+
+// For module config tables and dataset schemas
+var entityMap = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '/': '&#x2F;',
+  '`': '&#x60;',
+  '=': '&#x3D;'
+};
+
+function escapeHtml (string) {
+  return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+    return entityMap[s];
+  });
+}
+
+function jsonToTable(jsonObj, parentClass = "") {
+    var text = "<table class='table table-sm propertiesTable hover " + parentClass + "' border='1'>"
+    if (jsonObj == null || jsonObj.length == 0) return "None";
+    for (var x in jsonObj) {
+        var rowText = (typeof jsonObj[x] === 'object'?
+            jsonToTable(jsonObj[x], x) : escapeHtml(jsonObj[x]));
+        text += "<tr><td class='key'>" + x + "</td><td class='value " + x + "-value'>" + rowText + "</td></tr>";
+    }
+    text += "</table>"
+    return text;
+}
+
+function schemaToTable(jsonObj) {
+    var text = "<table class='table table-sm small hover' border='1'>"
+    text += "<thead class='ui-widget-header'><tr><th></th><th>Column</th><th>Type</th><th>Nullable</th></tr></thead>";
+    var cnt = 0;
+    var body = ""
+    for (var x in jsonObj) {
+        body += "<tr><td class='index'>" + (++cnt) + "</td><td class='key'>" + x + "</td><td>"
+            + escapeHtml(jsonObj[x].type.replaceAll(",", ", ")) + "</td><td>" + jsonObj[x].nullable + "</td></tr>";
+    }
+    text += "<tbody class='ui-widget-content'>" + body + "</tbody></table>"
+    return text;
+}
