@@ -16,7 +16,7 @@ class CacheService {
   @Autowired
   var passwordEncoder: PasswordEncoder = _
 
-  @Value("${capex.cache.dags.timeout:60000}")
+  @Value("${capex.cache.dags.timeout:60}")
   var capexCacheTimeout: Int = _
 
   def getDsFiles(path: String): Seq[DsFile] = {
@@ -56,7 +56,7 @@ class CacheService {
   val capexDirs: mutable.Map[String, (Date, Map[String, Any])] = mutable.Map()
 
   def getCapexDirOrElseUpdate(key: String, valueGenerator: () => Map[String, Any]): Map[String, Any] = {
-    if (!capexDirs.contains(key) || new Date().getTime - capexDirs(key)._1.getTime > capexCacheTimeout) {
+    if (!capexDirs.contains(key) || new Date().getTime - capexDirs(key)._1.getTime > capexCacheTimeout * 1000) {
       capexDirs.put(key, (new Date(), valueGenerator.apply()))
     }
     capexDirs(key)._2
