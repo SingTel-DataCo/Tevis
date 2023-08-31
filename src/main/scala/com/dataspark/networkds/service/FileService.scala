@@ -37,7 +37,7 @@ class FileService {
     val objMapper = E2EVariables.objectMapper
     new File(dataDir + "/capex").listFiles(new FilenameFilter() {
       def accept(dir: File, fileName: String): Boolean = fileName.matches("dag_.*.json")
-    }).map(f => objMapper.readValue(f, classOf[Map[String, Map[String, Any]]]))
+    }).map(f => objMapper.readValue(f, classOf[Map[String, Map[String, Any]]])) //TODO: add version as a new column
       .flatMap(m => m("runners").values.map(objMapper.writeValueAsString))
   }
 
