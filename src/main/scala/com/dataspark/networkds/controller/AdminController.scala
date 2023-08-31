@@ -114,7 +114,7 @@ class AdminController {
 
   @GetMapping(path = Array("/getAppEnv"), produces = Array("application/json"))
   def getAppEnv: String = {
-    val results = Map("data" -> (parquetService.getSparkConfigs().map(v => Seq(v._1, "SparkConfig", v._2)) ++
+    val results = Map("data" -> (parquetService.getSparkConfigs.map(v => Seq(v._1, "SparkConfig", v._2)) ++
       System.getenv().map(v => Seq(v._1, "SystemEnv", v._2)) ++
       System.getProperties.map(v => Seq(v._1, "AppProperty", v._2)))
     )
