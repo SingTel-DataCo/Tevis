@@ -108,6 +108,16 @@
     </div>
 </div>
 
+<div th:fragment="schemaModal" id="schemaTemplate">
+    <div class="modal modal-schema" role="dialog">
+        <div class="small">
+            <span class="text-muted">Table: </span><span class="schema-table"></span><br/>
+            <span class="text-muted">Schema: </span>
+        </div>
+        <div class="schema"></div>
+    </div>
+</div>
+
 <div th:fragment="loadingOverlay">
     <div class="overlay">
         <div class="overlay__inner">
@@ -185,6 +195,7 @@
     <span id='file-list-actions'>
         <button class='btn btn-sm btn-outline-secondary btn-read' title="Read dataset"><i class='fa fa-play fa-xs'></i></button>
         <button class='btn btn-sm btn-outline-secondary btn-refresh' title="Refresh dataset/collection"><i class='fa fa-refresh fa-xs'></i></button>
+        <button class='btn btn-sm btn-outline-secondary btn-schema' title="View schema"><i class='fa fa-list fa-xs'></i></button>
         <button class='btn btn-sm btn-outline-secondary btn-unmount' title="Unmount collection"><i class='fa fa-remove fa-xs'></i></button>
     </span>
 </div>

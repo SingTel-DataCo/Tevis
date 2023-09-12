@@ -1,0 +1,2 @@
+# This restarts Tevis everyday at 2:40AM Singapore time to renew the kerberos
+40 18 * * * bash -c 'cd /data1/netapp/julius/tevis && ./stop-app.sh | cd /data1/netapp/julius/tevis && ./run-app.sh'

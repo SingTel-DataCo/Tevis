@@ -1,6 +1,6 @@
 package com.dataspark.networkds.controller
 
-import com.dataspark.networkds.service.{AppService, CacheService, ParquetService}
+import com.dataspark.networkds.service.{AppService, CacheService, FileService, ParquetService}
 import com.dataspark.networkds.util.E2EVariables
 import lombok.extern.slf4j.Slf4j
 import org.apache.log4j.LogManager
@@ -27,6 +27,9 @@ class CapexController {
   @Autowired
   private var appService: AppService = _
 
+  @Autowired
+  private var fileService: FileService = _
+
   val log = LogManager.getLogger(this.getClass.getSimpleName)
 
   @GetMapping(path = Array("", "/", "/index"))
@@ -49,15 +52,15 @@ class CapexController {
   @ResponseBody
   def readCapexDir(@RequestParam dir: String, user: Principal): String = {
     log.info(dir)
-    // Reading CAPEX directories only takes less than 5 seconds, so no need to cache for now.
-    //val capexDirInfo = cache.getCapexDirOrElseUpdate("capexDir_" + dir, () => parquetService.readCapexDir(dir))
-    //  .asInstanceOf[Map[String, Any]]
-    val capexDirInfo = parquetService.readCapexDir(dir)
+    // Reading CAPEX directories only takes less than 5 seconds, so put a 1min timeout on caching
+    val capexDirInfo = cache.getCapexDirOrElseUpdate("capexDir_" + dir, () => parquetService.readCapexDir(dir))
+      .asInstanceOf[Map[String, Any]]
 
     val userData = cache.getUserData(user.getName)
     userData.get().capexDir = dir
     userData.get().capexDirHistory.add(dir)
     userData.save()
+    fileService.writeCapexDirAsync(dir, capexDirInfo)
     E2EVariables.objectMapper.writeValueAsString(capexDirInfo)
   }
 

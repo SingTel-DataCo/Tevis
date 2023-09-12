@@ -64,84 +64,17 @@ case class Edge(from: ModuleNode, to: ModuleNode, link: String) {
   }
 }
 
-class E2EPipelineVisualizer(resolveUnsafeArrayData: Boolean) {
+class E2EPipelineVisualizer() {
 
   val log = LogManager.getLogger(this.getClass)
-  val unsafeArrayData = "org.apache.spark.sql.catalyst.expressions.UnsafeArrayData"
-  import com.dataspark.networkds.util.E2EVariables._
-
-  /**
-   * Extracts JSON data. By default it uses DataFrame.toJSON() but if it detects the presence of UnsafeArrayData, it
-   * will query for that data and convert to JSON using Jackson's ObjectMapper.
-   * Note that we can't completely replace DataFrame.toJSON() as this returns a clean conversion of data excluding its
-   * underlying schema, as compared to ObjectMapper which returns too many details.
-   * @param ds
-   * @param df
-   * @return
-   */
-  def extractDataInJson(df: DataFrame, rowLimit: Int): AnyRef = {
-    val list = try {
-      df.limit(rowLimit).toJSON.collect()
-    } catch {
-      case ex: Exception =>
-        log.error("Error extracting JSON data from DataFrame. " + ex.getMessage, ex)
-        Array[String]()
-    }
-    if (resolveUnsafeArrayData && list.nonEmpty && list.exists(_.contains(unsafeArrayData))) {
-      val rows = list.filter(_.contains(unsafeArrayData))
-      val fieldsToReread = rows.flatMap(r => objectMapper.readValue(r, classOf[Map[String, AnyRef]])
-        .filter{ case(_, v) => v.toString.contains(unsafeArrayData)}.keys.toSeq).distinct
-      val newQuery = df.select(fieldsToReread.map(col): _*).limit(rowLimit).collect()
-        .map(x => x.schema.zipWithIndex.map(si => (si._1.name, x(si._2)) ).toMap)
-
-      list.map(i => objectMapper.readValue(i, classOf[Map[String, AnyRef]])).zip(newQuery)
-        .map(row => row._1 ++ row._2.keySet.map(cell => cell -> row._1(cell).asInstanceOf[Map[String, Any]]
-          .zip(toMap(row._2(cell)))
-          .map(getCellDetailMap)))
-    } else list.map(objectMapper.readTree)
-  }
-
-  /**
-   * Converts a row to a Map. The row could be a Map already, or an instance of GenericRowWithSchema.
-   * @param row
-   * @return
-   */
-  def toMap(row: Any): Map[String, Any] = {
-    if (row.isInstanceOf[Map[String, Any]]) row.asInstanceOf[Map[String, Any]] else {
-      val rowWithSchema = row.asInstanceOf[GenericRowWithSchema]
-      rowWithSchema.schema.map(_.name).map(x => x -> rowWithSchema.getAs(x)).toMap
-    }
-  }
-
-  /**
-   * Reconciles the cell details recursively from both maps:
-   *  (1) one obtained via df.toJSON() which produces UnsafeArrayData, and
-   *  (2) one obtained from manually querying the column that had UnsafeArrayData in the first map
-   * @param cellEntry
-   * @return
-   */
-  def getCellDetailMap(cellEntry: ((Any, Any), (Any, Any))): (String, Any) = {
-    val finalCell = if (cellEntry._1._1.toString.contains(unsafeArrayData)) {
-      (cellEntry._2._1.asInstanceOf[mutable.WrappedArray[_]].toList.mkString(", "), cellEntry._1._2)
-    }
-    else if (cellEntry._1._2.toString.contains(unsafeArrayData) && cellEntry._1._2.isInstanceOf[Map[String, Any]]) {
-      (cellEntry._1._1.toString, cellEntry._1._2.asInstanceOf[Map[String, Any]]
-        .zip(cellEntry._2._2.asInstanceOf[Map[String, Any]]).map(getCellDetailMap))
-    }
-    else { cellEntry._1.asInstanceOf[(String, Any)] }
-    //if (finalCell.toString.contains(unsafeArrayData))
-    //  throw new IllegalStateException("Still contains unsafeArrayData: " + cellEntry.toString)
-    finalCell
-  }
 
   def generateVisualization(dir: String): Map[String, Any] = {
 
     val confPath = E2EVariables.confPath(dir)
     val runnerFolder = dir + "/planner/"
     val allRunners = E2EConfigUtil.getAllModuleRunners(runnerFolder)
-    val unitLevelConfigMap = allRunners.groupBy(_.profiles(0)).map(x => x._1 -> x._2.flatten(_.configFilesNeeded).toSet.toSeq)
-    val moduleConfs = E2EConfigUtil.getAllModuleConfsFormattedPaths(confPath, unitLevelConfigMap)
-    val nodes = E2EConfigUtil.getAllModuleNodes(dir, allRunners, moduleConfs)
+    val unitLevelConfsNeededMap = allRunners.groupBy(_.profiles(0)).map(x => x._1 -> x._2.flatten(_.configFilesNeeded).distinct)
+    val nodes = E2EConfigUtil.getAllModuleNodesAndConfs(dir, allRunners, unitLevelConfsNeededMap)
 
     val moduleRunnerNodes = nodes.filter(_.id > 0).filterNot(_.runner.disabled)
 
@@ -187,12 +120,10 @@ class E2EPipelineVisualizer(resolveUnsafeArrayData: Boolean) {
       .map(p => {
         val fullPath = confPath + p._2
         if (p._2.endsWith(".csv") && !p._2.contains("/") && new File(fullPath).exists()) {
-          log.info("Reading " + fullPath)
-          val data = Str.parseSeqStringToMap(fullPath, ",")
-          generateMapOutput(p, data, "CSV")
+          (fullPath, Map.empty)
         }
         else {
-          log.info("Skipping reading " + p._1)
+//          log.info("Skipping reading " + p._1)
           (p._1, Map.empty)
         }
       }).seq.toMap
@@ -228,7 +159,8 @@ class E2EPipelineVisualizer(resolveUnsafeArrayData: Boolean) {
       "datasets" -> dataDetails,
       "profiles" -> profiles,
       "rootDirs" -> Seq("input", "outputSector", "outputSite", "outputCluster")
-        .map(x => configFormatter.format("${Hdfs." + x + "}")))
+        .map(x => configFormatter.format("${Hdfs." + x + "}")),
+      "confDir" -> confPath)
 
     log.info("Done generating pipeline-withdata.json!")
     jsonMap

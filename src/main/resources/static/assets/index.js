@@ -306,6 +306,10 @@ function setTableEventHandlers(tabId, elemId) {
 
     $(elemId + " .search-box").on('keyup', function (e) {
         if (e.key === 'Enter' && e.ctrlKey) $(elemId + " .search-btn").trigger('click');
+        else if (!jsEventsMinimize) {
+            $(this).height( 'auto' );
+            $(this).height( $(elemId + " .search-box")[0].scrollHeight );
+        }
     });
 
     $(elemId + " .btn-delete-section").click(function () {
@@ -340,6 +344,7 @@ function runCachedQueryOnThisSection(tabId, section) {
     $(sectionId + " .loading").show();
     $.get( "/dataset/getCachedQuery", {"queryId" : queryId}, function(response) {
         if (response) {
+            if ($.isEmptyObject(response.schema)) response.schema = {column: null};
             renderDataTable(sectionId, section.sectionName, response, section.chartModel);
             $(sectionId + " .dataTables_wrapper").css("opacity", 1.0);
             if (section.showChart) {
@@ -370,6 +375,7 @@ function runQueryOnThisSection(tabId, sectionId) {
     var startTime = Date.now();
     $.post( "/dataset/queryTable", {"sql" : sql}, function(response) {
         response.query.duration = (Date.now() - startTime) / 1000.0;
+        if ($.isEmptyObject(response.query.schema)) response.query.schema = {column: null};
         renderDataTable(sectionId, section.sectionName, response.query);
         $(sectionId + " .dataTables_wrapper").css("opacity", 1.0);
         $(sectionId + " .loading").hide();
@@ -432,6 +438,10 @@ function createTabs() {
         });
     });
     $(".search-btn").tooltip();
+    //Auto-resize textarea based on content: https://stackoverflow.com/a/13085420/3369952
+    $(".search-box").each(function(textarea) {
+        $(this).height( $(this)[0].scrollHeight );
+    });
 }
 
 function createNewTab(tabCounter, isMasterTab) {

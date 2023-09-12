@@ -1,16 +1,13 @@
 package com.dataspark.networkds.service
 
-import com.dataspark.networkds.beans.{HFile, HFileData}
+import com.dataspark.networkds.beans.{DsFile, HFile, HFileData}
 import com.dataspark.networkds.config.SparkConfig
-import com.dataspark.networkds.util.{E2EConfigUtil, E2EPipelineVisualizer, SparkHadoopUtil}
+import com.dataspark.networkds.util.{DatasetUtil, E2EConfigUtil, E2EPipelineVisualizer, E2EVariables, SparkHadoopUtil, Str}
 import org.apache.commons.io.FilenameUtils
-import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
-import org.apache.hadoop.io.nativeio.NativeIO
-import org.apache.log4j.LogManager
+import org.slf4j.LoggerFactory
 import org.apache.spark.SparkException
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
 import org.springframework.beans.factory.annotation.{Autowired, Value}
 import org.springframework.stereotype.Service
 
@@ -23,25 +20,29 @@ import scala.collection.mutable.ListBuffer
 @Service
 class ParquetService {
 
-  val log = LogManager.getLogger(this.getClass.getSimpleName)
+  val log = LoggerFactory.getLogger(this.getClass.getSimpleName)
 
   @Autowired
   private var cache: CacheService = _
 
+  @Autowired
+  private var fileService: FileService = _
+
   @Value("${query.row.limit}")
   var rowLimit: Int = _
-
-  @Value("${unsafe_array_data.resolve}")
-  var resolveUnsafeArrayData: Boolean = _
 
   @Autowired
   var sparkConfig: SparkConfig = _
 
+  var e2eVisualizer = new E2EPipelineVisualizer()
+
   var mySparkSession: SparkSession = null
+
   def spark: SparkSession = {
     if (mySparkSession == null || mySparkSession.sparkContext.isStopped) {
       mySparkSession = sparkConfig.spark
       SparkSession.setDefaultSession(mySparkSession)
+      initDsFilesTable()
     }
     mySparkSession
   }
@@ -50,8 +51,14 @@ class ParquetService {
     FileSystem.get(SparkHadoopUtil.newConfiguration(spark.sparkContext.getConf))
   }
 
-  def e2eVisualizer = {
-    new E2EPipelineVisualizer(resolveUnsafeArrayData)
+  def initDsFilesTable(): Unit = {
+    spark.createDataFrame(spark.sparkContext.parallelize(cache.files.get().dirs.flatten(d => {
+      d._2.map(f => Row(f.filename, f.date, f.size, d._1))
+    }).toSeq), Encoders.product[DsFile].schema)
+      .createOrReplaceTempView("dsfiles")
+
+    spark.read.json(spark.sparkContext.parallelize(fileService.readCapexDags()))
+      .createOrReplaceTempView("capexDirs")
   }
 
   def loadFile(hfile: HFile, refresh: Boolean = false): DataFrame = {
@@ -80,6 +87,12 @@ class ParquetService {
     spark.sql("DROP TABLE IF EXISTS " + table)
   }
 
+  def readCsvFileLocal(f: File): HFile = {
+    val tableName = generateUniqueTableName(f.getName, "")
+    Str.parseSeqStringToDF(spark, f.getPath, ",").createOrReplaceTempView(tableName)
+    HFile(f.getPath, f.length(), tableName, "csv")
+  }
+
   def readCsvFile(hfile: HFile): DataFrame = {
     val tmpDf = spark.read.options(Map("inferSchema" -> "true", "header" -> "true")).csv(hfile.path)
     hfile.format = "csv"
@@ -91,31 +104,57 @@ class ParquetService {
       (x.name, Map("type" -> x.dataType.simpleString, "nullable" -> x.nullable))): _*)
   }
 
-  def readSchemaAndData(hFile: HFile, refresh: Boolean = false): HFileData = {
-    val df = loadFile(hFile, refresh)
-    if (hFile.schema == null) hFile.schema = getSchema(df)
+  def readSchemaAndData(hFile: HFile): HFileData = {
+    val df = loadFile(hFile)
+    cache.files.get().dirs.put(hFile.path, listFiles(hFile.path))
+    cache.files.save()
     val sql = s"SELECT * FROM ${hFile.table} LIMIT $rowLimit"
-    HFileData(data = e2eVisualizer.extractDataInJson(df, rowLimit), format = hFile.format,
+    HFileData(data = DatasetUtil.collect(df.limit(rowLimit)), format = hFile.format,
       path = hFile.table, schema = hFile.schema, sql = sql)
   }
 
   def queryTable(sql: String): HFileData = {
     validateSql(sql)
     val tokens = sql.split(";")
-    var df = spark.sql(tokens(0))
-    if (tokens.length > 1) {
-      val command = tokens(1).trim.toLowerCase()
-      df = if (command == "summary") df.summary() else if (command == "describe") df.describe() else df
-    }
-    val customLimit = "(?i)LIMIT\\s+(\\d+)".r.findAllMatchIn(sql).toSeq
-    val limit = if (customLimit.isEmpty) rowLimit else customLimit.last.group(1).toInt
-    HFileData(data = e2eVisualizer.extractDataInJson(df, limit), format = null,
+    val df = if (sql.startsWith("%scala")) { runScalaCode(sql.replaceAll("%scala", "")) }
+      else {
+        var df2 = spark.sql(tokens(0))
+        if (tokens.length > 1) {
+          val command = tokens(1).trim.toLowerCase()
+          df2 = if (command == "summary") df2.summary() else if (command == "describe") df2.describe() else df2
+        }
+        val customLimit = "(?i)LIMIT\\s+(\\d+)".r.findAllMatchIn(sql).toSeq
+        val limit = if (customLimit.isEmpty) rowLimit else customLimit.last.group(1).toInt
+        df2.limit(limit)
+      }
+    HFileData(data = DatasetUtil.collect(df), format = null,
       path = null, schema = getSchema(df), sql = sql)
   }
 
+  // Inspired by this: https://medium.com/@kadirmalak/compile-arbitrary-scala-code-at-runtime-using-reflection-with-variable-injection-2002e0500565
+  def runScalaCode(code: String): DataFrame = {
+    import tools.reflect.ToolBox
+    val tb = reflect.runtime.currentMirror.mkToolBox()
+    val tree = tb.parse(
+      s"""
+         |def wrapper(context: Map[String, Any]): Any = {
+         |  val spark = context("spark").asInstanceOf[org.apache.spark.sql.SparkSession]
+         |  import org.apache.spark.sql.functions._
+         |  import spark.implicits._
+         |  $code
+         |}
+         |wrapper _
+        """.stripMargin)
+
+    val f = tb.compile(tree)
+    val wrapper = f().asInstanceOf[Map[String, Any] => DataFrame]
+    val df = wrapper(Map("spark" -> spark))
+    df
+  }
+
   private def validateSql(sql: String): Unit = {
-    if ("(?i)DROP\\s+TABLE".r.findAllMatchIn(sql).nonEmpty)
-      throw new SQLException("DROP TABLE command is not allowed.")
+  //  if ("(?i)DROP\\s+TABLE".r.findAllMatchIn(sql).nonEmpty)
+  //    throw new SQLException("DROP TABLE command is not allowed.")
     if (sql.contains(";")) {
       val postDfCommand = ";(.+)".r.findAllMatchIn(sql).toSeq
       if (postDfCommand.nonEmpty) {
@@ -123,19 +162,6 @@ class ParquetService {
         if (!Seq("summary", "describe").contains(command))
            throw new SQLException(s"$command: invalid Spark DataFrame function.")
       }
-    }
-  }
-
-  /**
-   * Converts a row to a Map. The row could be a Map already, or an instance of GenericRowWithSchema.
-   *
-   * @param row
-   * @return
-   */
-  def toMap(row: Any): Map[String, Any] = {
-    if (row.isInstanceOf[Map[String, Any]]) row.asInstanceOf[Map[String, Any]] else {
-      val rowWithSchema = row.asInstanceOf[GenericRowWithSchema]
-      rowWithSchema.schema.map(_.name).map(x => x -> rowWithSchema.getAs(x)).toMap
     }
   }
 
@@ -166,11 +192,11 @@ class ParquetService {
     if (dsPath2 == rootPath2) dsPath2.substring(dsPath2.lastIndexOf("/") + 1)
     else dsPath2.substring(dsPath2.indexOf(rootPath2) + rootPath2.length)
       .replace("sub_module=", "").replace("module=", "")
-      .replaceAll("\\/|=|\\+|-|\\.|<|>|\\*", " ")
+      .replaceAll("\\/|=|\\+|-|\\.|<|>|%|\\*", " ")
       .trim.replaceAll("\\s+", "_")
   }
 
-  def listFiles(rootDir: String): Seq[Seq[Any]] = {
+  def listFiles(rootDir: String): Seq[DsFile] = {
     val rootPath = new Path(rootDir)
     val csvFile = new File(rootDir) //must be a local CSV file, just in case Hadoop path doesn't exist
 
@@ -183,10 +209,10 @@ class ParquetService {
       list.par.map(p => {
         val path = p.getPath
         val fileStat = fs.getFileStatus(path)
-        Seq(path.getName, new Timestamp(fileStat.getModificationTime).toLocalDateTime.toString, fileStat.getLen, path.toString)
+        DsFile(path.getName, new Timestamp(fileStat.getModificationTime), fileStat.getLen)
       }).seq
     } else if (rootDir.endsWith(".csv") && csvFile.exists()) {
-      Seq(Seq(csvFile.getName, new Timestamp(csvFile.lastModified()).toLocalDateTime.toString, csvFile.length(), rootDir))
+      Seq(DsFile(csvFile.getName, new Timestamp(csvFile.lastModified()), csvFile.length()))
     } else throw new FileNotFoundException(s"$rootDir does not exist")
   }
 
@@ -234,6 +260,8 @@ class ParquetService {
     list
   }
 
+  def cacheKeyForParquet(rootPath: String): String = "parquetDir_" + E2EConfigUtil.trimProtocol(rootPath)
+
   def listHdfsDirs(rootDir: String): Map[String, HFile] = {
 
     val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
@@ -249,7 +277,6 @@ class ParquetService {
         list += HFile(rootDirPath.toString, fs.getContentSummary(rootDirPath).getLength, tableName)
       } else {
         //the second boolean parameter here sets the recursion to true
-        fs.setPermission(rootDirPath, new FsPermission("777"));
         val fileStatusListIterator = fs.listFiles(rootDirPath, true)
         val tmpList = new ListBuffer[FileStatus]
         var successFileFound = false
@@ -276,7 +303,13 @@ class ParquetService {
         new Thread{
           override def run(): Unit = {
             list.par.foreach(loadFile(_))
-            cache.parquetDirs.save() // to save the schema
+            val dirKey = cacheKeyForParquet(rootDir)
+            cache.putParquetDir(dirKey, list.map(f => f.table -> f).toMap)
+            val map = list.par.map(e => e.path -> listFiles(e.path)).seq
+            map.foreach(x => cache.files.get().dirs.put(E2EConfigUtil.toS3(x._1), x._2))
+            cache.files.save()
+
+            initDsFilesTable()
           }
         }.start()
       }
@@ -306,7 +339,7 @@ class ParquetService {
     true
   }
 
-  def getSparkConfigs() : Map[String, String] = {
+  def getSparkConfigs: Map[String, String] = {
     if (mySparkSession != null && !mySparkSession.sparkContext.isStopped)
       mySparkSession.conf.getAll
     else Map.empty[String, String]

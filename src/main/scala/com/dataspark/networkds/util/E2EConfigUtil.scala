@@ -15,7 +15,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.text.StringSubstitutor
-import org.apache.log4j.LogManager
+import org.slf4j.LoggerFactory
 
 import java.io._
 import java.nio.file.Paths
@@ -78,15 +78,20 @@ object E2EVariables {
     if (file.getCanonicalFile.getParentFile.getName != "planner") file.toURI.getPath
     else getConfigPath(file.getParentFile.getParentFile.toPath.resolve(Paths.get(file.getName)).toFile)
   }
-
-  val csvFilter = new FilenameFilter() {
-    def accept(dir: File, fileName: String): Boolean = fileName.endsWith(".csv")
-  }
 }
 
 object E2EConfigUtil {
 
-  val log = LogManager.getLogger(this.getClass)
+  val log = LoggerFactory.getLogger(this.getClass)
+
+  def getAllModuleNodesAndConfs(dir: String, allRunners: Seq[ModuleRunner], unitLevelConfsNeededMap: Map[String, Seq[String]]): Seq[ModuleNode] = {
+
+    val confPath = E2EVariables.confPath(dir)
+    val moduleConfs = getAllModuleConfsGroupedByUnitLevel(confPath, unitLevelConfsNeededMap)
+    val nodes = getAllModuleNodes(dir, allRunners, moduleConfs)
+    formatModuleConfPaths(confPath, nodes, unitLevelConfsNeededMap.keys.toSeq)
+    linkUpModuleNodes(nodes)
+  }
 
   def getAllRunnersInScript(mainRunnerScriptFile: String): Seq[ModuleRunner] = {
 
@@ -115,7 +120,8 @@ object E2EConfigUtil {
       }
       }
       if (moduleRunners.isEmpty) {
-        val appConf = shFile.replaceAll(".*run_|.sh", "").capitalize
+        val appConf = if (appConfigs.nonEmpty) getAppConf(appConfigs(0))
+          else shFile.replaceAll(".*run_|.sh", "").capitalize
         val configFilesNeeded = "\\w+\\.conf".r.findAllIn(lines.mkString).toSet.toSeq
         Seq(ModuleRunner(shFile, "", configFilesNeeded, appConf, RunnerType.Python, disabled, seqNo = i))
       } else moduleRunners
@@ -142,7 +148,6 @@ object E2EConfigUtil {
     //    })
     sectorLevelRunners ++ siteLevelRunners // ++ clusterLevelRunners
   }
-
 
   /**
    * Parse all .conf files
@@ -173,7 +178,7 @@ object E2EConfigUtil {
     moduleConfs
   }
 
-  def getAllModuleConfsFormattedPaths(confPath: String, unitLevelConfigMap: Map[String, Seq[String]] = Map.empty[String, Seq[String]])
+  def getAllModuleConfsGroupedByUnitLevel(confPath: String, unitLevelConfigMap: Map[String, Seq[String]] = Map.empty[String, Seq[String]])
   : Map[String, Seq[ModuleConf]] = {
     val allModuleConfs = getAllModuleConfs(confPath)
 
@@ -181,27 +186,40 @@ object E2EConfigUtil {
 
     // unitLevelConfigMap is a map of (sector -> Seq of config filenames, site -> Seq of config filenames)
     val configMap = unitLevelConfigMap.map(x => x._1 ->
-      formatPaths(confPath, allModuleConfs.filter(c => x._2.contains(confFileName(c.name))), E2EVariables.runConfMap(x._1))
+      allModuleConfs.filter(c => x._2.contains(confFileName(c.name)))
     )
     val usedConfs = configMap.flatMap(x => x._2.map(_.name)).toSeq
     configMap ++ Map("unused" -> allModuleConfs.filterNot(c => usedConfs.contains(c.name)))
   }
 
+  def formatModuleConfPaths(confPath: String, nodes: Seq[ModuleNode], unitLevels: Seq[String])
+  : Unit = {
+
+    unitLevels.foreach(ul => {
+      val nodesUnitLevel = nodes.filter(n => n.runner != null && n.runner.profiles.contains(ul))
+      val moduleConfs = nodesUnitLevel.map(_.appConf)
+      val formatter = getFormatter(confPath, moduleConfs, E2EVariables.runConfMap(ul))
+      nodesUnitLevel.foreach(n => {
+        val moduleConf = n.appConf
+        n.appConf = moduleConf.copy(inputPaths = moduleConf.inputPaths.map(formatter.format),
+          outputPaths = moduleConf.outputPaths.map(formatter.format))
+      })
+    })
+  }
+
   /**
-   * Replace placeholders with actual path values
+   * Get formatter based on parameters.
+   * @param confPath
    * @param confs
+   * @param unitLevelConf
    * @return
    */
-  def formatPaths(confPath: String, confs: Seq[ModuleConf], unitLevelConf: Seq[String] = Seq.empty[String]): Seq[ModuleConf] = {
+  def getFormatter(confPath: String, confs: Seq[ModuleConf], unitLevelConf: Seq[String] = Seq.empty[String]): E2EConfigUtil = {
     val confMapping = Map("Hdfs.conf" -> "HdfsMain.conf", "Field.conf" -> "FieldMain.conf")
-    val includes: Set[String] = confs.flatMap(_.includes).toSet[String]
-      .map(i => if (confMapping.contains(i)) confMapping(i) else i)
+    val includes: Seq[String] = confs.flatMap(_.includes).toSet[String]
+      .map(i => if (confMapping.contains(i)) confMapping(i) else i).toSeq
     val files = confs.map(_.confFilePath).filter(_.nonEmpty) ++ (includes ++ unitLevelConf).map(confPath + _)
-    if (confs.filter(_.confFilePath.nonEmpty).isEmpty) confs else {
-      val formatter = new E2EConfigUtil(files)
-      confs.map(c => c.copy(inputPaths = c.inputPaths.map(formatter.format),
-        outputPaths = c.outputPaths.map(formatter.format)))
-    }
+    new E2EConfigUtil(files)
   }
 
   def generateConfFromShell(node: ModuleNode, dir: String): ModuleNode = {
@@ -209,7 +227,6 @@ object E2EConfigUtil {
     val text = IOUtils.readLines(new FileReader(dir + "/planner/" + runner.shellScript)).asScala.mkString(" ")
     var inPaths: Seq[String] = null
     var outPaths: Seq[String] = null
-    var updated = true
     if (runner.shellScript.contains("sectorClustering")) {
       val pattern = ".*getProperty.py.*?-p\\s(.*?)\\s\\|.*".r
       val pattern(input) = text
@@ -231,22 +248,18 @@ object E2EConfigUtil {
       node.appConf = ModuleConf(runner.appConf, inPaths.distinct, outPaths.distinct)
     } else if (runner.shellScript.contains("decisionEngine")) {
       if (text.contains("getProperty.py")) {
-        val pattern = ".*getProperty.py.*?-p\\s(.*?)\\s\\|.*getProperty.py.*?-p\\s(.*?)\\s\\|.*".r
-        val pattern(input, output) = text
-        inPaths = input.split("\\s+").map(m => "input=${" + m + "}")
-        outPaths = output.split("\\s+").map(m => "output=${" + m + "}")
+        val paths = "getProperty.py.*?-p\\s(.*?)\\s".r.findAllMatchIn(text).map(m => m.group(1)).toSeq
+        inPaths = Seq("input=${" + paths(0).trim + "}")
+        val tmpOut = Seq(("output", paths(1))) ++ (if (paths.size > 2) Seq(("output_intermediate", paths(2))) else Seq())
+        outPaths = tmpOut.map(o => o._1 + "=${" + o._2.trim + "}")
       } else {
         inPaths = "-i\\s(\\w+\\.\\w+)".r.findAllMatchIn(text).map(m => "input=${" + m.group(1) + "}").toSeq
         outPaths = "-o\\s(\\w+\\.\\w+)".r.findAllMatchIn(text).map(m => "output=${" + m.group(1) + "}").toSeq
       }
-      node.appConf.inputPaths = node.appConf.inputPaths ++ inPaths.distinct
-      node.appConf.outputPaths = node.appConf.outputPaths ++ outPaths.distinct
-    } else updated = false
-    if (updated) {
-      val updatedConf = formatPaths(E2EVariables.confPath(dir), Seq(node.appConf),
-        E2EVariables.runConfMap(node.runner.profiles(0)))(0)
-      node.copy(appConf = updatedConf)
-    } else node
+      node.appConf = node.appConf.copy(inputPaths = node.appConf.inputPaths ++ inPaths.distinct,
+        outputPaths = node.appConf.outputPaths ++ outPaths.distinct)
+    }
+    node
   }
 
   /**
@@ -261,7 +274,10 @@ object E2EConfigUtil {
       .getOrElse(ModuleConf(r.appConf))))
     val noRunnerNodes = moduleConfs("unused").zip((0 until moduleConfs("unused").size).map(_ - 201))
       .map(mc => ModuleNode(mc._2, null, mc._1))
-    val nodes = runnerNodes ++ runnerNodesDisabled ++ noRunnerNodes
+    runnerNodes ++ runnerNodesDisabled ++ noRunnerNodes
+  }
+
+  def linkUpModuleNodes(nodes: Seq[ModuleNode]): Seq[ModuleNode] = {
 
     // Search for upstream and downstream modules of each ModuleNode
     nodes.foreach(from => nodes.filter(!_.appConf.name.equals(from.appConf.name)).foreach(to => {
@@ -343,7 +359,7 @@ object E2EConfigUtil {
         .map(_.replaceAll("//.*", ""))
         .filter(r => r.contains("filePath")).map(r => "optimiser." + r.trim)
     } catch {
-      case _ => Seq.empty[String]
+      case _: IOException => Seq.empty[String]
     }
     val configs = ConfigFactory.parseFile(confFile).getConfig("DecisionEngine.Params").root()
     ModuleConf(if (moduleName.equals(sectionName)) moduleName else (moduleName + "_" + sectionName),
@@ -356,14 +372,19 @@ object E2EConfigUtil {
   }
 
   def getIntersectingValues(kvPairs1: Seq[String], kvPairs2: Seq[String]): Seq[String] = {
+
+    // Temporarily append end slash if missing, to ensure "output/" is not substring of "output_path/".
+    // Without end slash, "output" will look like a substring of "output_path".
+    def endSep(path: String): String = path + (if (path.endsWith("/")) "" else "/")
+
     val kvPairs1Paths = kvPairs1.map(_.split("=", 2)(1).replaceAll("\\[|\\]", "").trim).filterNot(_.isEmpty)
     val kvPairs2Paths = kvPairs2.map(_.split("=", 2)(1).replaceAll("\\[|\\]", "").trim).filterNot(_.isEmpty)
     (kvPairs1Paths.map(p1 => kvPairs2Paths
-      .map(p2 => if (p2.contains(p1)) p2 else "")
+      .map(p2 => if (endSep(p2).contains(endSep(p1))) p2 else "")
       .find(_.nonEmpty).orElse(Some("")).get)
       .filter(_.nonEmpty) ++
       kvPairs2Paths.map(p2 => kvPairs1Paths
-        .map(p1 => if (p1.contains(p2)) p1 else "")
+        .map(p1 => if (endSep(p1).contains(endSep(p2))) p1 else "")
         .find(_.nonEmpty).orElse(Some("")).get)
         .filter(_.nonEmpty)).distinct
   }
@@ -378,4 +399,12 @@ object E2EConfigUtil {
   def trimProtocol(dsPath: String): String =
     (if (dsPath.contains(":")) dsPath.substring(dsPath.indexOf(":") + 1) else dsPath)
       .replaceAll("/$", "").replaceAll("//", "/")
+
+  /**
+   * Tries to convert "s3a://" protocol to "s3://" protocol if it exists
+   * @param path
+   * @return
+   */
+  def toS3(path: String): String = if (path.startsWith("s3a://"))
+    path.replace("s3a://", "s3://") else path
 }
