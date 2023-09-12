@@ -15,7 +15,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.text.StringSubstitutor
-import org.apache.log4j.LogManager
+import org.slf4j.LoggerFactory
 
 import java.io._
 import java.nio.file.Paths
@@ -82,6 +82,8 @@ object E2EVariables {
 
 object E2EConfigUtil {
 
+  val log = LoggerFactory.getLogger(this.getClass)
+
   def getAllModuleNodesAndConfs(dir: String, allRunners: Seq[ModuleRunner], unitLevelConfsNeededMap: Map[String, Seq[String]]): Seq[ModuleNode] = {
 
     val confPath = E2EVariables.confPath(dir)
@@ -90,9 +92,6 @@ object E2EConfigUtil {
     formatModuleConfPaths(confPath, nodes, unitLevelConfsNeededMap.keys.toSeq)
     linkUpModuleNodes(nodes)
   }
-
-
-  val log = LogManager.getLogger(this.getClass)
 
   def getAllRunnersInScript(mainRunnerScriptFile: String): Seq[ModuleRunner] = {
 
@@ -149,7 +148,6 @@ object E2EConfigUtil {
     //    })
     sectorLevelRunners ++ siteLevelRunners // ++ clusterLevelRunners
   }
-
 
   /**
    * Parse all .conf files
@@ -401,4 +399,12 @@ object E2EConfigUtil {
   def trimProtocol(dsPath: String): String =
     (if (dsPath.contains(":")) dsPath.substring(dsPath.indexOf(":") + 1) else dsPath)
       .replaceAll("/$", "").replaceAll("//", "/")
+
+  /**
+   * Tries to convert "s3a://" protocol to "s3://" protocol if it exists
+   * @param path
+   * @return
+   */
+  def toS3(path: String): String = if (path.startsWith("s3a://"))
+    path.replace("s3a://", "s3://") else path
 }

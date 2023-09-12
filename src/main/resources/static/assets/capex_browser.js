@@ -96,6 +96,7 @@ function showDatasetDetails(path) {
     if (ds == null) {
 
         let rootDir = pipelineData.rootDirs.find(rd => path.startsWith(rd));
+        if (rootDir == undefined) rootDir = pipelineData.confDir;
         $(".overlay").show();
         var startTime = Date.now();
         $.get( "/dataset/getDataFromPath",
@@ -371,7 +372,7 @@ function renderDataTable(dsName, ds, id) {
 function renderFilesView(rootDir, divId) {
    var dsPath = $("#dataSearchBox").val();
    if (dsPath.endsWith(".csv") && dsPath.indexOf("/") < 0) {
-      dsPath = $("#input-path-edit").val() + "/conf/" + dsPath;
+      dsPath = $("#input-path").val() + "/conf/" + dsPath;
    }
    let tableAppProps = $("#" + divId + " table").DataTable( {
       dom: 'Bfrtip',

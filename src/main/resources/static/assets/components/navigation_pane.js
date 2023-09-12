@@ -102,8 +102,10 @@ class NavigationPane {
         let rnFileGroupNav = tmpData.map((rn, i) => {
             let collapseId = 'collapse' + i;
             let rnBadge = ' <span class="badge">' + rn.tags[0] + '</span>';
+            let rnProps = '<span class=\'text-muted\'>Dataset count: </span><span>' + rn.nodes.length + '</span><br/>' +
+                '<span class=\'text-muted\'>Total size: </span><span>' + rn.size + '</span><br/>';
             let rnBtnToggle = '<span class="btn-toggle rounded" style="padding-bottom: 10px" data-bs-toggle="collapse" data-bs-target="#'
-             + collapseId + '" ><span class="file-group-name" data-bs-toggle="popover" title="' + rn.text + '" data-bs-content="<div class=\'btn-actions\'></div>Path: ' + rn.path + '">' + truncate(rn.text, 45) + '</span>' + rnBadge + '</span>';
+             + collapseId + '" ><span class="file-group-name" data-bs-toggle="popover" title="' + rn.text + '" data-bs-content="<div class=\'btn-actions\'></div>' + rnProps + '">' + truncate(rn.text, 45) + '</span>' + rnBadge + '</span>';
             let liList = rn.nodes.map(cn => {
                 let props = '<span class=\'text-muted\'>Path: </span><span>' + cn.path + '</span><br/>' +
                     '<span class=\'text-muted\'>Format: </span><span>' + cn.format + '</span><br/>' +

@@ -2,10 +2,10 @@ package com.dataspark.networkds.service
 
 import com.dataspark.networkds.beans.{DsFile, HFile, HFileData}
 import com.dataspark.networkds.config.SparkConfig
-import com.dataspark.networkds.util.{DatasetUtil, E2EConfigUtil, E2EPipelineVisualizer, E2EVariables, SparkHadoopUtil}
+import com.dataspark.networkds.util.{DatasetUtil, E2EConfigUtil, E2EPipelineVisualizer, E2EVariables, SparkHadoopUtil, Str}
 import org.apache.commons.io.FilenameUtils
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
-import org.apache.log4j.LogManager
+import org.slf4j.LoggerFactory
 import org.apache.spark.SparkException
 import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
 import org.springframework.beans.factory.annotation.{Autowired, Value}
@@ -20,7 +20,7 @@ import scala.collection.mutable.ListBuffer
 @Service
 class ParquetService {
 
-  val log = LogManager.getLogger(this.getClass.getSimpleName)
+  val log = LoggerFactory.getLogger(this.getClass.getSimpleName)
 
   @Autowired
   private var cache: CacheService = _
@@ -85,6 +85,12 @@ class ParquetService {
 
   def dropView(table: String): Unit = {
     spark.sql("DROP TABLE IF EXISTS " + table)
+  }
+
+  def readCsvFileLocal(f: File): HFile = {
+    val tableName = generateUniqueTableName(f.getName, "")
+    Str.parseSeqStringToDF(spark, f.getPath, ",").createOrReplaceTempView(tableName)
+    HFile(f.getPath, f.length(), tableName, "csv")
   }
 
   def readCsvFile(hfile: HFile): DataFrame = {
@@ -300,7 +306,7 @@ class ParquetService {
             val dirKey = cacheKeyForParquet(rootDir)
             cache.putParquetDir(dirKey, list.map(f => f.table -> f).toMap)
             val map = list.par.map(e => e.path -> listFiles(e.path)).seq
-            map.foreach(x => cache.files.get().dirs.put(x._1, x._2))
+            map.foreach(x => cache.files.get().dirs.put(E2EConfigUtil.toS3(x._1), x._2))
             cache.files.save()
 
             initDsFilesTable()

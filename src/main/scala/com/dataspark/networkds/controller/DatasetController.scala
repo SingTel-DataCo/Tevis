@@ -1,16 +1,17 @@
 package com.dataspark.networkds.controller
 
-import com.dataspark.networkds.beans.{HFile, HFileData, QueryTx, Section, Tab, UserData, Workbook}
+import com.dataspark.networkds.beans.{HFile, HFileData, QueryTx, Section, Tab, Workbook}
 import com.dataspark.networkds.service.{AppService, CacheService, FileService, ParquetService}
 import com.dataspark.networkds.util.{E2EConfigUtil, E2EVariables, Str}
 import org.apache.commons.io.FilenameUtils
-import org.apache.logging.log4j.LogManager
-import org.springframework.beans.factory.annotation.{Autowired, Value}
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.{InputStreamResource, Resource}
 import org.springframework.http.{MediaType, ResponseEntity}
-import org.springframework.web.bind.annotation.{CrossOrigin, GetMapping, PostMapping, RequestBody, RequestMapping, RequestParam, ResponseBody, RestController}
+import org.springframework.web.bind.annotation.{CrossOrigin, GetMapping, PostMapping, RequestMapping, RequestParam, ResponseBody, RestController}
 import org.springframework.web.servlet.ModelAndView
 
+import java.io.File
 import java.security.Principal
 import java.sql.SQLException
 import java.time.{LocalDateTime, ZoneId}
@@ -36,7 +37,7 @@ class DatasetController {
   @Autowired
   private var appService: AppService = _
 
-  val log = LogManager.getLogger(this.getClass.getSimpleName)
+  val log = LoggerFactory.getLogger(this.getClass.getSimpleName)
   val readableTimeFormat = DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")
 
   @GetMapping(path = Array("", "/", "/index"))
@@ -91,9 +92,15 @@ class DatasetController {
     val userData = cache.getUserData(user.getName)
     userData.get().datasets.add(rootDir)
     userData.save()
-    val hFile = dirList.values.find(hf => E2EConfigUtil.trimProtocol(hf.path).endsWith(E2EConfigUtil.trimProtocol(path))).orNull
+    var hFile = dirList.values.find(hf => E2EConfigUtil.trimProtocol(hf.path).endsWith(E2EConfigUtil.trimProtocol(path))).orNull
     if (hFile == null) {
-      throw new SQLException(s"Dataset path '$path' doesn't exist.")
+      val f = new File(path)
+      if (f.exists() && path.endsWith(".csv")) {
+        hFile = parquetService.readCsvFileLocal(f)
+        cache.putParquetDir(cacheKeyForParquet(rootDir), dirList ++ Map(hFile.table -> hFile))
+      } else {
+        throw new SQLException(s"Dataset path '$path' doesn't exist.")
+      }
     }
     E2EVariables.objectMapper.writeValueAsString(parquetService.readSchemaAndData(hFile))
   }
@@ -159,7 +166,8 @@ class DatasetController {
     val results = Map("data" -> cache.getDsFiles(path).map(f => {
       val dateFormatted = f.date.toInstant.atZone(ZoneId.systemDefault())
         .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-      Seq(f.filename, dateFormatted, f.size, path + "/" + f.filename)
+      val filepath = path + (if (path.endsWith(".csv")) "" else "/" + f.filename)
+      Seq(f.filename, dateFormatted, f.size, filepath)
     }))
     E2EVariables.objectMapper.writeValueAsString(results)
   }
@@ -223,13 +231,15 @@ class DatasetController {
   case class TreeViewNode(text: String, path: String = null, format: String = null, size: String = null,
                           nodes: Seq[TreeViewNode] = null, tags: Seq[Int] = null)
 
+  def formatFileSize(size: Long): String = "%,d".format(size) + " B"
+
   def buildTreeViewData(dirKeys: Iterable[String], selectedFolder: String = ""): AnyRef = {
     val ord = Ordering.by { foo: HFile => foo.path }
     dirKeys.toSeq.sorted
       .map(d => d -> cache.getParquetDirOrElseUpdate(cacheKeyForParquet(d), () => parquetService.listHdfsDirs(d)).values)
       .map(x => {
-        val nodes = x._2.toSeq.sorted(ord).map(c => TreeViewNode(c.table, c.path, c.format, "%,d".format(c.size) + " B"))
-        TreeViewNode(x._1, nodes = nodes, tags = Seq(nodes.size))
+        val nodes = x._2.toSeq.sorted(ord).map(c => TreeViewNode(c.table, c.path, c.format, formatFileSize(c.size)))
+        TreeViewNode(x._1, nodes = nodes, tags = Seq(nodes.size), size = formatFileSize(x._2.map(_.size).sum))
       })
   }
 

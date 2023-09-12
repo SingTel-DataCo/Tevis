@@ -3,6 +3,7 @@ package com.dataspark.networkds.service
 import com.dataspark.networkds.beans._
 import com.dataspark.networkds.dao.{JsonDb, JsonDbFactory}
 import org.apache.hadoop.fs.Path
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.{Autowired, Value}
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -13,6 +14,8 @@ import scala.collection.{Map, mutable}
 @Service
 class CacheService {
 
+  val log = LoggerFactory.getLogger(this.getClass.getSimpleName)
+
   @Autowired
   var passwordEncoder: PasswordEncoder = _
 
@@ -21,6 +24,7 @@ class CacheService {
 
   def getDsFiles(path: String): Seq[DsFile] = {
     val resolvedPath = new Path(path).toString
+    log.info(s"Resolved path $resolvedPath")
     val key = files.get().dirs.keys.find(_.endsWith(resolvedPath)).get
     files.get().dirs(key)
   }
