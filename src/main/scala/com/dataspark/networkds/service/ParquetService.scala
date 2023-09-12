@@ -153,8 +153,8 @@ class ParquetService {
   }
 
   private def validateSql(sql: String): Unit = {
-    if ("(?i)DROP\\s+TABLE".r.findAllMatchIn(sql).nonEmpty)
-      throw new SQLException("DROP TABLE command is not allowed.")
+  //  if ("(?i)DROP\\s+TABLE".r.findAllMatchIn(sql).nonEmpty)
+  //    throw new SQLException("DROP TABLE command is not allowed.")
     if (sql.contains(";")) {
       val postDfCommand = ";(.+)".r.findAllMatchIn(sql).toSeq
       if (postDfCommand.nonEmpty) {
