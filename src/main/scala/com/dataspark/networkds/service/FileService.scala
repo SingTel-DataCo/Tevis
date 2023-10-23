@@ -35,10 +35,13 @@ class FileService {
 
   def readCapexDags(): Seq[String] = {
     val objMapper = E2EVariables.objectMapper
-    new File(dataDir + "/capex").listFiles(new FilenameFilter() {
-      def accept(dir: File, fileName: String): Boolean = fileName.matches("dag_.*.json")
-    }).map(f => objMapper.readValue(f, classOf[Map[String, Map[String, Any]]])) //TODO: add version as a new column
-      .flatMap(m => m("runners").values.map(objMapper.writeValueAsString))
+    val capexFolder = new File(dataDir + "/capex")
+    if (capexFolder.exists()) {
+      capexFolder.listFiles(new FilenameFilter() {
+        def accept(dir: File, fileName: String): Boolean = fileName.matches("dag_.*.json")
+      }).map(f => objMapper.readValue(f, classOf[Map[String, Map[String, Any]]])) //TODO: add version as a new column
+        .flatMap(m => m("runners").values.map(objMapper.writeValueAsString))
+    } else { Seq.empty[String] }
   }
 
   def readQueryTx(queryId: String): Option[QueryTx] = {

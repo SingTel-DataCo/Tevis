@@ -57,8 +57,11 @@ class ParquetService {
     }).toSeq), Encoders.product[DsFile].schema)
       .createOrReplaceTempView("dsfiles")
 
-    spark.read.json(spark.sparkContext.parallelize(fileService.readCapexDags()))
-      .createOrReplaceTempView("capexDirs")
+    val capexDags = fileService.readCapexDags()
+    if (capexDags.nonEmpty) {
+      spark.read.json(spark.sparkContext.parallelize(capexDags))
+        .createOrReplaceTempView("capexDirs")
+    }
   }
 
   def loadFile(hfile: HFile, refresh: Boolean = false): DataFrame = {
@@ -200,7 +203,7 @@ class ParquetService {
     val rootPath = new Path(rootDir)
     val csvFile = new File(rootDir) //must be a local CSV file, just in case Hadoop path doesn't exist
 
-    if (fs.exists(rootPath)) {
+    if (fs.exists(rootPath) && fs.isDirectory(rootPath)) {
       val iterator = fs.listFiles(new Path(rootDir), false)
       val list = new ListBuffer[FileStatus]
       while (iterator.hasNext) {
@@ -211,7 +214,7 @@ class ParquetService {
         val fileStat = fs.getFileStatus(path)
         DsFile(path.getName, new Timestamp(fileStat.getModificationTime), fileStat.getLen)
       }).seq
-    } else if (rootDir.endsWith(".csv") && csvFile.exists()) {
+    } else if (rootDir.endsWith(".csv") && (fs.exists(rootPath) || csvFile.exists())) {
       Seq(DsFile(csvFile.getName, new Timestamp(csvFile.lastModified()), csvFile.length()))
     } else throw new FileNotFoundException(s"$rootDir does not exist")
   }
