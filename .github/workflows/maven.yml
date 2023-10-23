@@ -18,7 +18,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    env:
+      TS_FILE: date +"%y%m%d_%H%M"
     steps:
     - uses: actions/checkout@v3
     - name: Set up JDK 8
@@ -29,6 +30,13 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B package --file pom.xml
+    - name: Zip the test reports
+      run: zip -r scalatest_${TS_FILE}.zip ${PWD}/target/scalatest
+    - name: Upload the test reports to dist folder
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: scalatest_${TS_FILE}.zip
     - name: Make the script files executable
       run: chmod +x ${PWD}/src/test/qa/run_tests.sh
     - name: Run QA tests

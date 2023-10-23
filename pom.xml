@@ -244,8 +244,8 @@
                     <skipTests>${skipTests}</skipTests>
                     <parallel>false</parallel>
                     <argLine>-Xmx2G</argLine>
-                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-                    <htmlreporters>${project.build.directory}/html/scalatest</htmlreporters>
+                    <reportsDirectory>${project.build.directory}/scalatest/surefire</reportsDirectory>
+                    <htmlreporters>${project.build.directory}/scalatest/html</htmlreporters>
                     <testFailureIgnore>false</testFailureIgnore>
                 </configuration>
                 <executions>
