@@ -28,16 +28,17 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B package --file pom.xml
-    - name: "Create env variable using date"
+    - name: Create env variable using date
+      id: ts_file
       run: |
         echo "TS_FILE=$(date +'%y%m%d_%H%M')" >> $GITHUB_ENV
     - name: Zip the test reports
-      run: zip -r scalatest_${env.TS_FILE}.zip ${PWD}/target/scalatest
+      run: zip -r scalatest_${{env.TS_FILE}}.zip ${PWD}/target/scalatest
     - name: Upload the test reports to dist folder
       uses: actions/upload-artifact@v3
       with:
         name: dist
-        path: scalatest_${TS_FILE}.zip
+        path: scalatest_${{env.TS_FILE}}.zip
     - name: Make the script files executable
       run: chmod +x ${PWD}/src/test/qa/run_tests.sh
     - name: Run QA tests
