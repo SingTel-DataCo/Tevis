@@ -31,7 +31,7 @@ jobs:
       run: mvn -B package --file pom.xml
     - name: Run QA tests
       run: |
-        ${PWD}/src/test/qa/run-tests.sh
+        ${PWD}/src/test/qa/run_tests.sh
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
