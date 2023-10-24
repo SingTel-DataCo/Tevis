@@ -34,14 +34,14 @@ jobs:
         echo "DATETIME=$(date +'%y%m%d_%H%M')" >> $GITHUB_ENV
     - name: Zip the test reports
       run: |
-        cd ${GITHUB_WORKSPACE}/target/scalatest
-        zip -r scalatest_report_${{env.DATETIME}}.zip ./*
+        cd ${GITHUB_WORKSPACE}/target/
+        zip -r '${GITHUB_WORKSPACE}/scalatest_report.zip' ./scalatest
         cd ${GITHUB_WORKSPACE}
     - name: Upload the test reports to dist folder
       uses: actions/upload-artifact@v3
       with:
         name: scalatest_report_${{env.DATETIME}}
-        path: scalatest_report_${{env.DATETIME}}.zip
+        path: scalatest_report.zip
         if-no-files-found: error
     - name: Make the script files executable
       run: chmod +x ${PWD}/src/test/qa/run_tests.sh
