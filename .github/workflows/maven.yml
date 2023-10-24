@@ -35,7 +35,7 @@ jobs:
     - name: Zip the test reports
       run: |
         cd ${GITHUB_WORKSPACE}/target/
-        zip -r '${GITHUB_WORKSPACE}/scalatest_report.zip' ./scalatest
+        zip -r "${GITHUB_WORKSPACE}/scalatest_report.zip" ./scalatest
         cd ${GITHUB_WORKSPACE}
     - name: Upload the test reports to dist folder
       uses: actions/upload-artifact@v3
