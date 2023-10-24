@@ -35,12 +35,12 @@ jobs:
     - name: Zip the test reports
       run: |
         cd ${GITHUB_WORKSPACE}/target/scalatest
-        zip -r ${GITHUB_WORKSPACE}/scalatest_report_${{env.TS_FILE}}.zip ./*
+        zip -r scalatest_report_${{env.TS_FILE}}.zip ./*
         cd ${GITHUB_WORKSPACE}
     - name: Upload the test reports to dist folder
       uses: actions/upload-artifact@v3
       with:
-        path: ${GITHUB_WORKSPACE}/scalatest_report_${{env.TS_FILE}}.zip
+        path: scalatest_report_${{env.TS_FILE}}.zip
         if-no-files-found: error
     - name: Make the script files executable
       run: chmod +x ${PWD}/src/test/qa/run_tests.sh
