@@ -33,7 +33,10 @@ jobs:
       run: |
         echo "TS_FILE=$(date +'%y%m%d_%H%M')" >> $GITHUB_ENV
     - name: Zip the test reports
-      run: zip -r scalatest_${{env.TS_FILE}}.zip ${PWD}/target/scalatest
+      run: |
+        cd ${PWD}/target/scalatest
+        zip -r scalatest_report_${{env.TS_FILE}}.zip ./*
+        cd ${GITHUB_WORKSPACE}
     - name: Upload the test reports to dist folder
       uses: actions/upload-artifact@v3
       with:
