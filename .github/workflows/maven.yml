@@ -40,7 +40,7 @@ jobs:
     - name: Upload the test reports to dist folder
       uses: actions/upload-artifact@v3
       with:
-        path: scalatest_report_${{env.TS_FILE}}.zip
+        path: ${PWD}/target/scalatest/scalatest_report_${{env.TS_FILE}}.zip
         if-no-files-found: error
     - name: Make the script files executable
       run: chmod +x ${PWD}/src/test/qa/run_tests.sh
