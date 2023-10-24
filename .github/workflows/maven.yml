@@ -31,16 +31,16 @@ jobs:
     - name: Create env variable using date
       id: ts_file
       run: |
-        echo "TS_FILE=$(date +'%y%m%d_%H%M')" >> $GITHUB_ENV
+        echo "REPORT_FILE=${GITHUB_WORKSPACE}/scalatest_report_$(date +'%y%m%d_%H%M').zip" >> $GITHUB_ENV
     - name: Zip the test reports
       run: |
         cd ${GITHUB_WORKSPACE}/target/scalatest
-        zip -r scalatest_report_${{env.TS_FILE}}.zip ./*
+        zip -r ${{env.REPORT_FILE}} ./*
         cd ${GITHUB_WORKSPACE}
     - name: Upload the test reports to dist folder
       uses: actions/upload-artifact@v3
       with:
-        path: scalatest_report_${{env.TS_FILE}}.zip
+        path: ${{env.REPORT_FILE}}
         if-no-files-found: error
     - name: Make the script files executable
       run: chmod +x ${PWD}/src/test/qa/run_tests.sh
