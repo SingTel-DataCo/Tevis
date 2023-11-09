@@ -98,6 +98,7 @@ function showDatasetDetails(path) {
         let rootDir = pipelineData.rootDirs.find(rd => path.startsWith(rd));
         if (rootDir == undefined) rootDir = pipelineData.confDir;
         $(".overlay").show();
+        $(".query-warning").hide();
         var startTime = Date.now();
         $.get( "/dataset/getDataFromPath",
             {"path" : path, "rootDir" : rootDir },
@@ -175,8 +176,21 @@ function renderDatasetTab(path, ds, fromModule, dependentModules) {
     let dataView = "<div id='" + tableContainerId + "'>"
         + "<div class='input-group'>"
         + "<textarea class='form-control' placeholder='Enter your SQL statement here' id='sqlBox' rows='1'></textarea>"
-        + "<button id='sqlBtn' class='btn btn-outline-secondary'>"
-        + "<i class='fas fa-search'></i></button></div>"
+        + "<div>"
+        + "<button id='sqlBtn' class='btn btn-sm btn-outline-secondary'>"
+        + "<i class='fas fa-search'></i></button>"
+        + "<div class='dropdown ms-auto'>"
+        +     "<button type='button' class='btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-split'"
+        +     " aria-haspopup='true' aria-expanded='false' style='height: 20px; padding: 0px 10px;' data-bs-toggle='dropdown'>"
+        +         "<span class='sr-only'>Toggle</span>"
+        +     "</button>"
+        +     "<ul class='dropdown-menu'>"
+        +         "<li class='dropdown-item disabled' type='button'>Show query plan</li>"
+        +     "</ul>"
+        +  "</div>"
+        + "</div>"
+        + "</div>"
+        + "<div class='alert alert-warning query-warning'></div>"
         + "<div class='dataTable'><table></table></div></div>";
     let detailsView = "<div id='tab-" + uniqueName + "-2' class='detailsView'>"
         + jsonToTable({"format": (ds == null ? "N/A" : ds.format), "path": (ds == null ? path : ds.path),
@@ -206,23 +220,7 @@ function renderDatasetTab(path, ds, fromModule, dependentModules) {
     $(".to .value").click(onModuleClicked);
     $("#sqlBox").val(ds.sql);
     $("#sqlBtn").click(function(){
-        let sql = $("#sqlBox").val();
-        $(".dataTables_wrapper").css("opacity", 0.3);
-        loadingDiv.appendTo($('#' + tableContainerId));
-        $('#' + tableContainerId + " .loading").show();
-        var startTime = Date.now();
-        $.post( "/dataset/queryTable", {"sql" : sql}, function(response) {
-            response.query.duration = (Date.now() - startTime) / 1000.0;
-            response.query.path = ds.path;
-            $('#' + tableContainerId + " .dataTable").empty();
-            $('#' + tableContainerId + " .dataTable").append("<table></table>");
-            renderDataTable(ds.path, response.query, tableContainerId);
-            $(".dataTables_wrapper").css("opacity", 1.0);
-            $('#' + tableContainerId + " .loading").hide();
-        }).fail(function (xhr, status, error) {
-              $('#' + tableContainerId + " .loading").hide();
-              alert(error + "\n" + xhr.responseText);
-          });
+        queryTable($("#sqlBox").val(), ds, tableContainerId);
     });
 
     $("#sqlBox").on('keyup', function (e) {
@@ -231,6 +229,47 @@ function renderDatasetTab(path, ds, fromModule, dependentModules) {
 
     if (new URLSearchParams(window.location.search).get("data") != path) {
         window.history.pushState({}, null, "capex?data=" + path);
+    }
+}
+
+function queryTable(sql, ds, tableContainerId) {
+    $(".dataTables_wrapper").css("opacity", 0.3);
+    loadingDiv.appendTo($('#' + tableContainerId));
+    $('#' + tableContainerId + " .loading").show();
+    $('#' + tableContainerId + " .query-warning").hide();
+    var startTime = Date.now();
+    $.post( "/dataset/queryTable", {"sql" : sql}, function(response) {
+
+        response.query.duration = (Date.now() - startTime) / 1000.0;
+        response.query.path = ds.path;
+        $('#' + tableContainerId + " .dataTable").empty();
+        $('#' + tableContainerId + " .dataTable").append("<table></table>");
+        showQueryWarningIfNeeded('#' + tableContainerId, ds.path, response.query.lf);
+        renderDataTable(ds.path, response.query, tableContainerId);
+
+        $(".dataTables_wrapper").css("opacity", 1.0);
+        $('#' + tableContainerId + " .loading").hide();
+    }).fail(function (xhr, status, error) {
+          $('#' + tableContainerId + " .loading").hide();
+          alert(error + "\n" + xhr.responseText);
+      });
+}
+
+function showQueryWarningIfNeeded(sectionId, sectionName, largeFileInfo) {
+    if (largeFileInfo) {
+        let lf = largeFileInfo;
+        var warningMsg = "Results have been truncated to " + lf.rowLimit + " rows.";
+        if (lf.error) {
+            warningMsg += " However, full CSV file cannot be generated due to this error: " + lf.error;
+            //Use .text() to render HTML escape characters
+            $(sectionId + " .query-warning").text(warningMsg);
+        } else {
+            warningMsg += " If you want to download the full result,"
+              + " <a href='dataset/download?path=" + lf.csvPath + "' download='" + sectionName + ".csv'>click here ("
+              + lf.csvSize + " CSV file)</a>.";
+            $(sectionId + " .query-warning").html(warningMsg);
+        }
+        $(sectionId + " .query-warning").show();
     }
 }
 
