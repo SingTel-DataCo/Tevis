@@ -54,21 +54,30 @@ class ParquetService {
       mySparkSession = sparkConfig.spark
       SparkSession.setDefaultSession(mySparkSession)
       initDsFilesTable()
-      val fsCustom = FileSystem.get(SparkHadoopUtil.newConfiguration(spark.sparkContext.getConf))
-      fsMap = (if (fsDefault.getScheme == fsCustom.getScheme)
-        Map(fsCustom.getScheme -> fsCustom)
-      else Map(fsDefault.getScheme -> fsDefault, fsCustom.getScheme -> fsCustom))
-        .map{case(k, v) => k.replace("s3a", "s3") -> v} //attempts to find and convert any s3a to s3
+      fsMap = initFileSystemMap()
       getFs(hdfsTempDir).deleteOnExit(new Path(hdfsTempDir))
     }
     mySparkSession
   }
 
-  def getFs(path: String) = {
+  def getFs(path: String): FileSystem = {
+
+    if (fsMap == null) {
+      fsMap = initFileSystemMap()
+      getFs(hdfsTempDir).deleteOnExit(new Path(hdfsTempDir))
+    }
     log.info(s"Available FS keys: ${fsMap.keys.mkString(", ")}")
     val scheme = fsMap.keys.find(path.startsWith _).getOrElse(fsDefault.getScheme)
     log.info(s"$scheme scheme for path $path")
     fsMap(scheme)
+  }
+
+  def initFileSystemMap(): Map[String, FileSystem] = {
+    val fsCustom = FileSystem.get(SparkHadoopUtil.newConfiguration(spark.sparkContext.getConf))
+    (if (fsDefault.getScheme == fsCustom.getScheme)
+      Map(fsCustom.getScheme -> fsCustom)
+    else Map(fsDefault.getScheme -> fsDefault, fsCustom.getScheme -> fsCustom))
+      .map { case (k, v) => k.replace("s3a", "s3") -> v } //attempts to find and convert any s3a to s3
   }
 
   def initDsFilesTable(): Unit = {
@@ -267,7 +276,7 @@ class ParquetService {
     if (dsPath2 == rootPath2) dsPath2.substring(dsPath2.lastIndexOf("/") + 1)
     else dsPath2.substring(dsPath2.indexOf(rootPath2) + rootPath2.length)
       .replace("sub_module=", "").replace("module=", "")
-      .replaceAll("\\/|=|\\+|-|\\.|<|>|%|\\*", " ")
+      .replaceAll("[^\\w]+", " ")
       .trim.replaceAll("\\s+", "_")
   }
 
