@@ -1,7 +1,8 @@
 package com.dataspark.networkds.util
 
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.types.{StructType, StructField, StringType}
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
+
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.collection.immutable.ListMap
@@ -78,4 +79,13 @@ object Str {
     new String(Base64.getDecoder.decode(decodedPartial), StandardCharsets.UTF_8)
   }
 
+  def formatFileSize(size: Long): String = formatSize(size)
+
+  //Copied from: https://stackoverflow.com/a/24805871/3369952
+  def formatSize(v: Long): String = {
+    if (v < 1024) return v + " B"
+    val z = (63 - java.lang.Long.numberOfLeadingZeros(v)) / 10
+    val unit = " KMGTPE".charAt(z)
+    f"${Math.scalb(v, z * -10)}%.1f ${unit}B"
+  }
 }

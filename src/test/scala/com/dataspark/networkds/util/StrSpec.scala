@@ -3,7 +3,7 @@ package com.dataspark.networkds.util
 import org.apache.spark.sql.SparkSession
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
-class StrTest extends FlatSpec with BeforeAndAfterAll with Matchers {
+class StrSpec extends FlatSpec with BeforeAndAfterAll with Matchers {
 
   lazy val spark: SparkSession = {
     SparkSession

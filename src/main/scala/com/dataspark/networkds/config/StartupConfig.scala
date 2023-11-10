@@ -1,7 +1,8 @@
 package com.dataspark.networkds.config
 
+import com.dataspark.networkds.service.AppService
 import org.apache.logging.log4j.LogManager
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.annotation.{Autowired, Value}
 import org.springframework.context.annotation.Configuration
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -16,14 +17,31 @@ class StartupConfig {
 
   val log = LogManager.getLogger(this.getClass.getSimpleName)
 
+  @Autowired
+  private var appService: AppService = _
+
   @Value("${server.port}")
   var serverPort: Int = _
 
   @EventListener(Array(classOf[ApplicationReadyEvent]))
   def applicationReadyEvent(): Unit = {
+    printLogo()
     val serverUrl = "http://localhost:" + serverPort
     log.info("Launching browser: " + serverUrl)
     browse(serverUrl)
+  }
+
+  def printLogo(): Unit = {
+    print(
+      s"""
+        | _____  __     ___
+        ||_   _|_\\ \\   / (_)___
+        |  | |/ _ \\ \\ / /| / __|
+        |  | |  __/\\ V / | \\__ \\
+        |  |_|\\___| \\_/  |_|___/
+        |TeVis v${appService.buildVersion}
+        |
+        |""".stripMargin)
   }
 
   // This method is copied from https://stackoverflow.com/a/60449216/3369952

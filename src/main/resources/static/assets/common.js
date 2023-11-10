@@ -76,11 +76,12 @@ function extractRowDataJson(table, tblRow, colNames) {
 function showChart(dsName, rootId, jsonContent, chartModel, eventCallback) {
     $(rootId + ' .dataTables_wrapper').hide();
     $(rootId + ' .chart-container').show();
-    if (!$(rootId + ' .chart-container').prop("is-chart-displayed")) {
-        let ds = {"name": dsName, "schema": jsonContent.schema, "data": jsonContent.data};
-        initChartSettings(rootId, ds, chartModel, eventCallback);
-        $(rootId + ' .chart-container').prop("is-chart-displayed", "true");
-    }
+    let currSection = wb.tabs[wb.currentTab].sections[rootId];
+
+    let ds = {"name": dsName, "schema": jsonContent.schema, "data": jsonContent.data};
+    initChartSettings(rootId, ds, chartModel, eventCallback);
+    currSection.showChart = true;
+
 }
 
 function initChartSettings(elemId, ds, chartModel, chartRenderedCallback) {

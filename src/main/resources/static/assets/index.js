@@ -72,7 +72,6 @@ $(function() {
     $(".btn-toggle-collapse-all").click(function(){
         let tabContentId = wb.tabs[wb.currentTab].tabContentId;
         let numPanelOpen = $(tabContentId + ' .accordion-item .show').length;
-        console.log(numPanelOpen);
         let command = numPanelOpen > 0 ? "hide" : "toggle";
         wb.tabs[wb.currentTab].sectionOrder.map(sId => {
             $(sId + "-collapse").collapse(command);
@@ -107,7 +106,28 @@ $(function() {
 //    }).addTo(map);
 });
 
-function renderDataTable(rootId, dsName, jsonContent, chartModel) {
+function showQueryWarningIfNeeded(section, largeFileInfo) {
+    if (largeFileInfo) {
+        let lf = largeFileInfo;
+        var warningMsg = "Results have been truncated to " + lf.rowLimit + " rows.";
+        if (lf.error) {
+            warningMsg += " However, full CSV file cannot be generated due to this error: " + lf.error;
+            //Use .text() to render HTML escape characters
+            $(section.sectionId + " .query-warning").text(warningMsg);
+        } else {
+            warningMsg += " If you want to download the full result,"
+              + " <a href='dataset/download?path=" + lf.csvPath + "' download='" + section.sectionName + ".csv'>click here ("
+              + lf.csvSize + " CSV file)</a>.";
+            $(section.sectionId + " .query-warning").html(warningMsg);
+        }
+        $(section.sectionId + " .query-warning").show();
+    }
+}
+
+function renderDataTable(section, jsonContent) {
+    let rootId = section.sectionId;
+    let dsName = section.sectionName;
+    let chartModel = section.chartModel;
     let columns = Object.keys(jsonContent.schema);
     let dataTableData = jsonContent.data.map(function(d){ return columns.map(function(k){
         return typeof d[k] === "object" ? JSON.stringify(d[k]) : d[k] }) });
@@ -116,6 +136,8 @@ function renderDataTable(rootId, dsName, jsonContent, chartModel) {
     let domTable = $(elemId);
     domTable.empty();
     $("<table></table>").appendTo(domTable);
+    var rendering = true;
+
     let table = $(elemId + " table").DataTable( {
        dom: 'Blrtip',
        lengthMenu: [[10, 50], [10, 50]],
@@ -152,6 +174,7 @@ function renderDataTable(rootId, dsName, jsonContent, chartModel) {
               action: function ( e, dt, node, config ) {
                 let onChartRendered = function(chartModel){
                     if ($(rootId).prop("is-setting-up")) return;
+                    //get the latest value of section from global wb.tabs
                     let currSection = wb.tabs[wb.currentTab].sections[rootId];
                     currSection.showChart = true;
                     currSection.chartModel = chartModel;
@@ -205,34 +228,42 @@ function renderDataTable(rootId, dsName, jsonContent, chartModel) {
    $('#' + rowDetailsId).remove();
    $(rootId + " .modal-row-details").attr('id', rowDetailsId);
 
-   $(rootId + " .chart-container").remove();
-   let overlayDiv = $("#chartDivTemplate .chart-container").clone();
-   overlayDiv.appendTo($(rootId + "-collapse"));
-   overlayDiv.hide();
-   let chartSettingsId = rootId.substring(1) + "-chartsettings";
-   $('#' + chartSettingsId).remove();
-   $(rootId + " .modal-chart-settings").attr('id', chartSettingsId);
-   $(rootId + ' .btn-view-table').click(function(){
-       $(elemId + ' .dataTables_wrapper').show();
-       $(rootId + ' .chart-container').hide();
-   });
-   $(rootId + ' .btn-chart-settings').click(function(){
-       var chartSettingsDialog = $('#' + chartSettingsId).dialog({
-           title: "Chart Settings - " + dsName,
-           width: "600px",
-           open: function(event, ui) {
-               $(this).parent().css({'top': window.pageYOffset+60});
-           }
-        });
-   });
+    if (!$(rootId + " .chart-container").length) {
+       $(rootId + " .chart-container").remove();
+       let overlayDiv = $("#chartDivTemplate .chart-container").clone();
+       overlayDiv.appendTo($(rootId + "-collapse"));
+       overlayDiv.hide();
+       let chartSettingsId = rootId.substring(1) + "-chartsettings";
+       $('#' + chartSettingsId).remove();
+       $(rootId + " .modal-chart-settings").attr('id', chartSettingsId);
+       $(rootId + ' .btn-view-table').click(function(){
+           $(elemId + ' .dataTables_wrapper').show();
+           $(rootId + ' .chart-container').hide();
+           wb.tabs[wb.currentTab].sections[rootId].showChart = false;
+           syncWork();
+       });
+       $(rootId + ' .btn-chart-settings').click(function(){
+           var chartSettingsDialog = $('#' + chartSettingsId).dialog({
+               title: "Chart Settings - " + dsName,
+               width: "600px",
+               open: function(event, ui) {
+                   $(this).parent().css({'top': window.pageYOffset+60});
+               }
+            });
+       });
 
-   $(rootId + ' .btn-fullscreen').on('click', function(){
-     if (document.fullscreenElement) {
-       document.exitFullscreen();
-     } else {
-       $(rootId + ' .chart-container').get(0).requestFullscreen();
-     }
-   });
+       $(rootId + ' .btn-fullscreen').on('click', function(){
+         if (document.fullscreenElement) {
+           document.exitFullscreen();
+         } else {
+           $(rootId + ' .chart-container').get(0).requestFullscreen();
+         }
+       });
+    }
+    if (section.showChart && chartModel && chartModel.chartType) {
+        $(section.sectionId + " .btn-show-chart").trigger('click');
+    }
+    rendering = false;
 }
 
 function getAllDatasets(rootDir) {
@@ -256,6 +287,7 @@ function getDataFromDataset(node, rootDir) {
     $(currSection + " .dataTables_wrapper").css("opacity", 0.3);
     loadingDiv.appendTo($(currSection + "-collapse"));
     $(currSection + " .msg-enter-sql").html(loadingDiv);
+    $(currSection + " .query-warning").hide();
     $(currSection + " .loading").show();
     var startTime = Date.now();
     $.get( "/dataset/getDataFromTable",
@@ -265,10 +297,13 @@ function getDataFromDataset(node, rootDir) {
             let sql = response.query.sql;
             $(currSection + " .search-box").val(sql);
             let currTab = wb.tabs[wb.currentTab];
-            currTab.sections[currTab.currentSection] = {sectionId: currTab.currentSection,
-                sectionName: node.text, description: node.path, sql : sql, queryId: response.queryId, showChart: false};
+            let sectionObj = currTab.sections[currTab.currentSection];
+            sectionObj.sectionName = node.text;
+            sectionObj.description = node.path;
+            sectionObj.sql = sql;
+            sectionObj.queryId = response.queryId;
             addToSqlHistory(sql);
-            renderDataTable(currSection, node.text, response.query);
+            renderDataTable(sectionObj, response.query);
             $(currSection + " .dataTables_wrapper").css("opacity", 1.0);
             $(currSection + " .loading").hide();
             syncWork();
@@ -345,7 +380,8 @@ function runCachedQueryOnThisSection(tabId, section) {
     $.get( "/dataset/getCachedQuery", {"queryId" : queryId}, function(response) {
         if (response) {
             if ($.isEmptyObject(response.schema)) response.schema = {column: null};
-            renderDataTable(sectionId, section.sectionName, response, section.chartModel);
+            showQueryWarningIfNeeded(section, response.lf);
+            renderDataTable(section, response);
             $(sectionId + " .dataTables_wrapper").css("opacity", 1.0);
             if (section.showChart) {
                 $(section.sectionId + " .btn-show-chart").trigger('click');
@@ -370,17 +406,19 @@ function runQueryOnThisSection(tabId, sectionId) {
     $(sectionId + " .dataTables_wrapper").css("opacity", 0.3);
     loadingDiv.appendTo($(sectionId + "-collapse"));
     $(sectionId + " .msg-enter-sql").html(loadingDiv);
-
+    $(sectionId + " .query-warning").hide();
     $(sectionId + " .loading").show();
     var startTime = Date.now();
     $.post( "/dataset/queryTable", {"sql" : sql}, function(response) {
+
         response.query.duration = (Date.now() - startTime) / 1000.0;
         if ($.isEmptyObject(response.query.schema)) response.query.schema = {column: null};
-        renderDataTable(sectionId, section.sectionName, response.query);
+        showQueryWarningIfNeeded(section, response.query.lf);
+        renderDataTable(section, response.query);
+
         $(sectionId + " .dataTables_wrapper").css("opacity", 1.0);
         $(sectionId + " .loading").hide();
         section.sql = sql;
-        section.showChart = false;
         section.queryId = response.queryId;
         addToSqlHistory(sql);
         syncWork();

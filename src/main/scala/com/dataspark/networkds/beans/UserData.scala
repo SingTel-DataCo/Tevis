@@ -36,4 +36,7 @@ case class DsFile(filename: String, date: Timestamp, size: Long, path: String = 
 
 case class QueryTx(queryId: String, date: Timestamp, user: String, query: HFileData)
 
-case class HFileData(data: AnyRef, format: String, path: String, schema: ListMap[String, Any], sql: String)
+case class HFileData(data: AnyRef, format: String, path: String, schema: ListMap[String, Any], sql: String,
+                     lf: LargeFileInfo = null)
+case class LargeFileInfo(bytesPerRow: Int = 0, rowLimit: Int = 0, csvPath: String = null, csvSize: String = null,
+                         error: String = null)

@@ -382,3 +382,9 @@ div.dt-button-collection .dt-button {
 .search-box {
     font: 12px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
 }
+
+.query-warning {
+    font-size: small;
+    display: none;
+    margin-top: 10px;
+}

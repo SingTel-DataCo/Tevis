@@ -38,7 +38,6 @@ class DatasetController {
   private var appService: AppService = _
 
   val log = LoggerFactory.getLogger(this.getClass.getSimpleName)
-  val readableTimeFormat = DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")
 
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
@@ -106,24 +105,28 @@ class DatasetController {
   }
 
   def processSqlResponse(user: Principal, results: HFileData): String = {
-    val readableTime = LocalDateTime.now.format(readableTimeFormat)
+    val readableTime = LocalDateTime.now.format(parquetService.readableTimeFormat)
     val queryId = s"${user.getName}_$readableTime"
     val queryTx = QueryTx(queryId, new Timestamp(System.currentTimeMillis()), user.getName, results)
     fileService.writeQueryTxAsync(queryTx)
     E2EVariables.objectMapper.writeValueAsString(queryTx)
   }
 
-  @PostMapping(path = Array("/queryTable"), produces = Array("application/json"))
-  @ResponseBody
-  def queryTable(@RequestParam sql: String, user: Principal): String = {
-    log.info(sql)
-    val results = parquetService.queryTable(sql)
+  def saveToHistory(sql: String, user: Principal): Unit = {
     val userData = cache.getUserData(user.getName)
     val sqlHistory = userData.get().sqlHistory
     sqlHistory.insert(0, sql)
     if (sqlHistory.length > 10)
       sqlHistory.remove(sqlHistory.length - 10)
     userData.save()
+  }
+
+  @PostMapping(path = Array("/queryTable"), produces = Array("application/json"))
+  @ResponseBody
+  def queryTable(@RequestParam sql: String, user: Principal): String = {
+    log.info(sql)
+    val results = parquetService.queryAndGetJsonWithRetry(sql)
+    saveToHistory(sql, user)
     processSqlResponse(user, results)
   }
 
@@ -173,7 +176,7 @@ class DatasetController {
   }
 
   @GetMapping(path = Array("/download"))
-  def download(path: String, user: Principal): ResponseEntity[Resource] = {
+  def download(path: String): ResponseEntity[Resource] = {
     val (fileLength, inputStream) = parquetService.getFileDownloadInfo(path)
     val resource = new InputStreamResource(inputStream)
     ResponseEntity.ok().contentLength(fileLength)
@@ -231,15 +234,13 @@ class DatasetController {
   case class TreeViewNode(text: String, path: String = null, format: String = null, size: String = null,
                           nodes: Seq[TreeViewNode] = null, tags: Seq[Int] = null)
 
-  def formatFileSize(size: Long): String = "%,d".format(size) + " B"
-
   def buildTreeViewData(dirKeys: Iterable[String], selectedFolder: String = ""): AnyRef = {
     val ord = Ordering.by { foo: HFile => foo.path }
     dirKeys.toSeq.sorted
       .map(d => d -> cache.getParquetDirOrElseUpdate(cacheKeyForParquet(d), () => parquetService.listHdfsDirs(d)).values)
       .map(x => {
-        val nodes = x._2.toSeq.sorted(ord).map(c => TreeViewNode(c.table, c.path, c.format, formatFileSize(c.size)))
-        TreeViewNode(x._1, nodes = nodes, tags = Seq(nodes.size), size = formatFileSize(x._2.map(_.size).sum))
+        val nodes = x._2.toSeq.sorted(ord).map(c => TreeViewNode(c.table, c.path, c.format, Str.formatFileSize(c.size)))
+        TreeViewNode(x._1, nodes = nodes, tags = Seq(nodes.size), size = Str.formatFileSize(x._2.map(_.size).sum))
       })
   }
 
