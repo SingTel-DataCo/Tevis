@@ -68,7 +68,6 @@ div.inline {
 #myDiagramDiv {
     border: solid 1px black;
     min-height: 70vh;
-    background: whitesmoke
 }
 
 #footer {
@@ -110,7 +109,8 @@ div.inline {
 }
 
 .dataTable tbody tr.row-selected {
-    background-color: #c5e1fc;
+    background-color: var(--bs-link-hover-color);
+    color: var(--bs-border-color);
 }
 
 div.dt-button-collection {
@@ -125,14 +125,6 @@ div.dt-button-collection .dt-button {
     font-size: small;
     max-height: 250px;
     overflow: auto;
-}
-
-.even {
-    background-color: #eee !important;
-}
-
-.dataTable tbody tr.row-selected.even {
-    background-color: #c5e1fc !important;
 }
 
 .dataTable table tbody tr td {
@@ -157,7 +149,7 @@ div.dt-button-collection .dt-button {
 .inputPaths td:hover, .outputPaths td:hover,
  .upstream td:hover, .downstream td:hover,
  .from-value:hover, .to-value:hover, .to td:hover {
-    background-color: #c5e1fc;
+    background: var(--bs-primary-bg-subtle);
     text-decoration: underline;
 }
 
@@ -387,4 +379,55 @@ div.dt-button-collection .dt-button {
     font-size: small;
     display: none;
     margin-top: 10px;
+}
+
+/* Copied from https://codepen.io/andornagy/pen/ALbdbJ START */
+#file-list-actions ul {
+	padding: 0;
+  margin: 0;
+	list-style: none;
+	position: relative;
+	}
+
+#file-list-actions ul li {
+	display:inline-block;
+}
+
+#file-list-actions span {
+	display:block;
+	text-decoration:none;
+}
+
+/* Hide Dropdowns by Default */
+#file-list-actions ul ul {
+	display: none;
+	position: absolute;
+}
+
+/* Display Dropdowns on Hover */
+#file-list-actions ul li:hover > ul {
+	display:inherit;
+}
+
+/* Fisrt Tier Dropdown */
+#file-list-actions ul ul li {
+	float:none;
+	display:list-item;
+	position: relative;
+}
+
+/* Change this in order to change the Dropdown symbol */
+#file-list-actions li > span:after { content:  ' +'; }
+#file-list-actions li > span:only-child:after { content: ''; }
+
+/* Copied from https://codepen.io/andornagy/pen/ALbdbJ END */
+
+.ui-widget-header {
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-body-color);
+}
+
+.ui-widget-content {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
 }

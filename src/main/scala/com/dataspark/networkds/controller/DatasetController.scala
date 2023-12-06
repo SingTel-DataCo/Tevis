@@ -52,6 +52,8 @@ class DatasetController {
     mav.addObject("dataRootDir", userData.get().parquetDir)
     mav.addObject("jsEventsMinimize", appService.jsEventsMinimize)
     mav.addObject("capexPageEnabled", appService.capexPageEnabled)
+    val dbUser = cache.users.get().users(user.getName)
+    mav.addObject("darkMode", dbUser.darkMode)
     mav
   }
 
@@ -200,6 +202,47 @@ class DatasetController {
   def schema(@RequestParam table: String, @RequestParam rootPath: String): String = {
     val hFile = cache.getParquetDir(cacheKeyForParquet(rootPath))(table)
     E2EVariables.objectMapper.writeValueAsString(hFile.schema)
+  }
+
+  @GetMapping(path = Array("/generateSql"), produces = Array("application/json"))
+  @ResponseBody
+  def generateSql(@RequestParam params: java.util.Map[String, String]): String = {
+    val table = params.get("table")
+    val `type` = params.get("type")
+    val rootPath = params.get("rootPath")
+    val hFile = cache.getParquetDir(cacheKeyForParquet(rootPath))(table)
+    if (`type` == "SELECT_COLS") {
+      val columns = hFile.schema.keys.mkString(", ")
+      val sql = s"SELECT $columns FROM ${hFile.table} LIMIT ${parquetService.rowLimit}"
+      E2EVariables.objectMapper.writeValueAsString(Map("sql" -> sql))
+    } else if (`type` == "CACHE_TABLE") {
+      val sql = s"CACHE TABLE cache1 AS (SELECT * FROM ${hFile.table})"
+      E2EVariables.objectMapper.writeValueAsString(Map("sql" -> sql))
+    } else if (`type` == "PIVOT") {
+      val cols = params.get("cols").split(",").map(_.trim)
+      val rows = params.get("rows").split(",").map(_.trim)
+      val aggs = params.get("aggs").split(",").map(_.trim)
+      val allCols = (cols ++ rows ++
+        aggs.map(a => a.replaceAll(".*\\((.*?)\\)", "$1")))
+        .filter(_.nonEmpty).distinct.mkString(", ")
+      val sql = if (params.get("language") == "scala") {
+        "%scala\n" +
+          s"val df = spark.read.table(${'"' + table + '"'})\n" +
+          s"df.select(${allCols.split(", ").map(c => '"' + c + '"').mkString(", ")})" +
+          s".groupBy(${rows.map(r => '"' + r + '"').mkString(", ")})" +
+          s".pivot(${'"' + cols(0) + '"'})" +
+          s".agg(${aggs.map(a => a.replaceAll("(.*)\\((.*?)\\)", "$1(\"$2\").as(\"$2\")")).mkString(", ")})"
+      }
+      else {
+        val colVals = parquetService.spark.table(table)
+          .select(cols.map(org.apache.spark.sql.functions.col): _*)
+          .distinct().collect().map(r => cols.indices.map(i => s"'${r.get(i)}'").mkString("(", ",", ")")).mkString(", ")
+        s"SELECT * FROM (SELECT $allCols FROM $table) pivot (${params.get("aggs")} for (${params.get("cols")}) in ($colVals))"
+      }
+      E2EVariables.objectMapper.writeValueAsString(Map("sql" -> sql))
+    } else {
+      throw new IllegalArgumentException(s"Invalid type '${`type`}'")
+    }
   }
 
   @PostMapping(path = Array("/unmount"), produces = Array("application/json"))

@@ -35,11 +35,12 @@ class SettingsController {
     mav.addObject("version", appService.buildVersion)
     mav.addObject("capexPageEnabled", appService.capexPageEnabled)
     mav.addObject("user", user)
-    mav
+    val dbUser = cache.users.get().users(user.getName)
+    mav.addObject("darkMode", dbUser.darkMode)
   }
 
   @PostMapping(path = Array("/updatePassword"))
-  def modifyUser(oldPassword: String, newPassword: String, user: Principal): Boolean = {
+  def modifyPassword(oldPassword: String, newPassword: String, user: Principal): Boolean = {
     val jsonDb = cache.users
     val dbUser = jsonDb.get().users(user.getName)
     if (!passwordEncoder.matches(oldPassword, dbUser.password)) {
@@ -47,6 +48,15 @@ class SettingsController {
     }
     val modifiedUser = UserInfo(dbUser.username, passwordEncoder.encode(newPassword),
       dbUser.roles, dbUser.isDisabled, dbUser.lastCreated, dbUser.lastLogin)
+    jsonDb.get().users.put(dbUser.username, modifiedUser)
+    jsonDb.save()
+  }
+
+  @PostMapping(path = Array("/updateSettings"))
+  def modifyUserSettings(darkMode: Boolean, user: Principal): Boolean = {
+    val jsonDb = cache.users
+    val dbUser = jsonDb.get().users(user.getName)
+    val modifiedUser = dbUser.copy(darkMode = darkMode)
     jsonDb.get().users.put(dbUser.username, modifiedUser)
     jsonDb.save()
   }

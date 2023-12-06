@@ -9,7 +9,8 @@ case class Users(var users: mutable.Map[String, UserInfo] = mutable.Map())
 
 case class UserInfo(username: String, password: String, roles: Seq[String], isDisabled: Boolean = false,
                     lastCreated: Timestamp = new Timestamp(System.currentTimeMillis()),
-                    lastLogin: Timestamp = new Timestamp(System.currentTimeMillis()))
+                    lastLogin: Timestamp = new Timestamp(System.currentTimeMillis()),
+                    darkMode: Boolean = false)
 
 case class UserData(var capexDir: String = null, var parquetDir: String = null, var capexDirHistory: mutable.Set[String] = mutable.Set(),
   var datasets: Set[String] = Set(), var sqlHistory: Buffer[String] = Buffer(), var workbook: Workbook = Workbook())

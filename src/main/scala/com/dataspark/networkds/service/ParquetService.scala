@@ -140,8 +140,7 @@ class ParquetService {
     val df = loadFile(hFile)
     cache.files.get().dirs.put(hFile.path, listFiles(hFile.path))
     cache.files.save()
-    val columns = df.columns.mkString(", ")
-    val sql = s"SELECT $columns FROM ${hFile.table} LIMIT $rowLimit"
+    val sql = s"SELECT * FROM ${hFile.table} LIMIT $rowLimit"
     HFileData(data = DatasetUtil.collect(df.limit(rowLimit)), format = hFile.format,
       path = hFile.table, schema = hFile.schema, sql = sql)
   }

@@ -320,7 +320,7 @@ function jsonToTable(jsonObj, parentClass = "") {
 }
 
 function schemaToTable(jsonObj) {
-    var text = "<table class='table table-sm small hover' border='1'>"
+    var text = "<table class='table table-sm small table-striped table-hover' border='1'>"
     text += "<thead class='ui-widget-header'><tr><th></th><th>Column</th><th>Type</th><th>Nullable</th></tr></thead>";
     var cnt = 0;
     var body = ""

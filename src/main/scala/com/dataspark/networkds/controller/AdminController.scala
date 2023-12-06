@@ -45,6 +45,8 @@ class AdminController {
     mav.addObject("version", appService.buildVersion)
     mav.addObject("capexPageEnabled", appService.capexPageEnabled)
     mav.addObject("user", user)
+    val dbUser = cache.users.get().users(user.getName)
+    mav.addObject("darkMode", dbUser.darkMode)
     mav
   }
 
