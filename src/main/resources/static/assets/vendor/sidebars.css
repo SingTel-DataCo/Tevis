@@ -29,7 +29,7 @@
     height: 30px;
 }
 
-.btn-toggle {
+.btn-toggle, .head-toggle {
   display: inline-flex;
   align-items: center;
   padding: .25rem .5rem;
@@ -37,15 +37,25 @@
   border: 0;
 }
 
-.btn-toggle:hover {
-  color: var(--bs-dark-text);
-  background-color: var(--bs-info);
+.btn-toggle:hover, .head-toggle:hover {
+  color: var(--bs-border-color);
+  background-color: var(--bs-link-hover-color);
+}
+
+.head-toggle::before {
+  width: 1.25em;
+  line-height: 0;
+   font-weight: 900;
+  transition: transform .35s ease;
+  transform-origin: .5em 50%;
 }
 
 .btn-toggle::before {
   width: 1.25em;
   line-height: 0;
-  content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba%280,0,0,.5%29' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 14l6-6-6-6'/%3e%3c/svg%3e");
+   font-family: "Font Awesome 6 Free";
+   content: ">";
+   font-weight: 900;
   transition: transform .35s ease;
   transform-origin: .5em 50%;
 }
@@ -60,8 +70,8 @@
 }
 
 .btn-toggle-nav li:hover {
-  color: var(--bs-dark-text);
-  background-color: var(--bs-info);
+  color: var(--bs-border-color);
+  background-color: var(--bs-link-hover-color);
 }
 
 .scrollarea {

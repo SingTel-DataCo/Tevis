@@ -90,6 +90,19 @@ $(function() {
       document.execCommand("copy");
     });
 
+    $('#toggle-collapse-btn').click(function(){
+
+        let width = parseInt($('#mySidebar').css('width'));
+        if (width < 21) {
+            $('#mySidebar').css('width', '400px');
+            $('#toggle-collapse-btn .toggle-close').show();
+            $('#toggle-collapse-btn .toggle-open').hide();
+        } else {
+            $('#mySidebar').css('width', '0');
+            $('#toggle-collapse-btn .toggle-close').hide();
+            $('#toggle-collapse-btn .toggle-open').show();
+        }
+    });
 //    var map = L.map('map').setView([37.857142857142854,20.0], 11);
 //    var CartoDB_Positron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 //    	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
@@ -135,7 +148,7 @@ function renderDataTable(section, jsonContent) {
     let elemId = rootId + " .dataTable";
     let domTable = $(elemId);
     domTable.empty();
-    $("<table></table>").appendTo(domTable);
+    $("<table class='table-striped table-hover'></table>").appendTo(domTable);
     var rendering = true;
 
     let table = $(elemId + " table").DataTable( {
@@ -245,7 +258,8 @@ function renderDataTable(section, jsonContent) {
        $(rootId + ' .btn-chart-settings').click(function(){
            var chartSettingsDialog = $('#' + chartSettingsId).dialog({
                title: "Chart Settings - " + dsName,
-               width: "600px",
+               width: 600,
+               height: 600,
                open: function(event, ui) {
                    $(this).parent().css({'top': window.pageYOffset+60});
                }
@@ -272,7 +286,7 @@ function getAllDatasets(rootDir) {
     $.get( "/dataset/list", {path: rootDir}, function( data ) {
         $(".overlay").hide();
         treeData = data;
-        navPane.updateNavPane(treeData);
+        navPane.updateNavPaneDatasets(treeData);
 
     }).fail(function (xhr, status, error) {
         $(".overlay").hide();
@@ -440,6 +454,7 @@ function setCurrentSection(newSectionId) {
 function syncWork(callback) {
     $.post( "/dataset/syncWork", {"workbook" : JSON.stringify(wb)}, function(newWb) {
         wb = newWb;
+        navPane.updateNavPaneTabs(wb.tabOrder.map(t => wb.tabs[t]));
         if (callback != null) {
             callback(wb);
         }
@@ -660,4 +675,44 @@ function shareLink(type, tabId, sectionId, elem) {
             }
         }
      });
+}
+
+function dragSqlColumn(ev) {
+    ev.dataTransfer.setData("src/type", "column");
+    ev.dataTransfer.setData("src/text", ev.target.innerText);
+}
+
+function dragSqlAggFunc(ev) {
+    ev.dataTransfer.setData("src/type", "function");
+    ev.dataTransfer.setData("src/text", ev.target.innerText);
+}
+
+function dropCol(ev) {
+  ev.preventDefault();
+  var data = ev.dataTransfer.getData("src/text");
+  if (ev.dataTransfer.getData("src/type") == "column") {
+      let curVal = $(ev.target).val();
+      $(ev.target).val((curVal ? curVal + ", " : "") + data);
+  }
+}
+
+function dropFunc(ev) {
+    ev.preventDefault();
+    var data = ev.dataTransfer.getData("src/text");
+    if (ev.dataTransfer.getData("src/type") == "column") {
+        let curVal = $(ev.target).val();
+        $(ev.target).val(curVal.replace("()", "(" + data + ")"));
+    }
+    if (ev.dataTransfer.getData("src/type") == "function") {
+        let curVal = $(ev.target).val();
+        $(ev.target).val((curVal ? curVal + ", " : "") + data);
+    }
+}
+
+function allowDropCol(ev) {
+  ev.preventDefault();
+}
+
+function allowDropFunc(ev) {
+  ev.preventDefault();
 }

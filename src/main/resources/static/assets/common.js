@@ -89,7 +89,7 @@ function initChartSettings(elemId, ds, chartModel, chartRenderedCallback) {
     let sortableUiList = $(chartSettingsId + " .sortable");
     sortableUiList.empty();
     Object.keys(ds.schema).forEach(function(k){
-        sortableUiList.append($('<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><label><input name="chart-columns" type="checkbox" checked value="' + k + '" />' + k + '</label></li>'));
+        sortableUiList.append($('<li class="list-group-item"><i class="fa fa-up-down"></i> </span><label><input name="chart-columns" type="checkbox" checked value="' + k + '" />' + k + '</label></li>'));
     });
     if (chartModel != null) {
         $(chartSettingsId + ' input[name="chart-columns"]').prop('checked', false);
@@ -320,7 +320,7 @@ function jsonToTable(jsonObj, parentClass = "") {
 }
 
 function schemaToTable(jsonObj) {
-    var text = "<table class='table table-sm small hover' border='1'>"
+    var text = "<table class='table table-sm small table-striped table-hover' border='1'>"
     text += "<thead class='ui-widget-header'><tr><th></th><th>Column</th><th>Type</th><th>Nullable</th></tr></thead>";
     var cnt = 0;
     var body = ""
@@ -331,3 +331,12 @@ function schemaToTable(jsonObj) {
     text += "<tbody class='ui-widget-content'>" + body + "</tbody></table>"
     return text;
 }
+
+const htmlColorTheme = $("html").attr("data-bs-theme");
+// Listen to OS color theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+    if (htmlColorTheme == "auto") {
+        const newColorScheme = event.matches ? "dark" : "light";
+        $("html").attr("data-bs-theme", newColorScheme);
+    }
+});

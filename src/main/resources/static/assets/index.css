@@ -9,7 +9,7 @@
 
 #file-list-controls {
     font-size: small;
-    padding: 5px;
+    padding: 10px 15px;
 }
 
 #sidebarHeader {
@@ -79,4 +79,30 @@
 .tt-nowrap {
     max-width: 950px;
     width: 100%;
+}
+
+#toggle-collapse-btn {
+
+    display: none;
+    z-index: 91;
+    position: absolute;
+    border: none;
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+    padding-left: 4px;
+    box-shadow: 0px 1px 4px 1px rgba(0 ,0, 0, .3);
+    left: 100%;
+    top: 1rem;
+    transform: translateX(-50%);
+    cursor: pointer;
+}
+
+.ui-resizable-handle.ui-resizable-e:hover, #toggle-collapse-btn:hover {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+#mySidebar:hover #toggle-collapse-btn {
+    display: block;
 }
