@@ -89,7 +89,7 @@ function initChartSettings(elemId, ds, chartModel, chartRenderedCallback) {
     let sortableUiList = $(chartSettingsId + " .sortable");
     sortableUiList.empty();
     Object.keys(ds.schema).forEach(function(k){
-        sortableUiList.append($('<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><label><input name="chart-columns" type="checkbox" checked value="' + k + '" />' + k + '</label></li>'));
+        sortableUiList.append($('<li class="list-group-item"><i class="fa fa-up-down"></i> </span><label><input name="chart-columns" type="checkbox" checked value="' + k + '" />' + k + '</label></li>'));
     });
     if (chartModel != null) {
         $(chartSettingsId + ' input[name="chart-columns"]').prop('checked', false);

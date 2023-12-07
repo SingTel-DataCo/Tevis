@@ -258,7 +258,8 @@ function renderDataTable(section, jsonContent) {
        $(rootId + ' .btn-chart-settings').click(function(){
            var chartSettingsDialog = $('#' + chartSettingsId).dialog({
                title: "Chart Settings - " + dsName,
-               width: "600px",
+               width: 600,
+               height: 600,
                open: function(event, ui) {
                    $(this).parent().css({'top': window.pageYOffset+60});
                }

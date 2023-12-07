@@ -318,8 +318,12 @@ div.dt-button-collection .dt-button {
 .sortable li span { position: absolute; margin-left: -1.3em; }
 .sortable input[type=checkbox] { margin-right: 5px; }
 
-#chartSettingsModal .modal-body {
+.modal-chart-settings {
     font-size: small;
+}
+
+.modal-chart-settings .list-group-item {
+    padding: 3px 0 0 10px;
 }
 
 .badge {

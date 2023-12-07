@@ -62,48 +62,47 @@
 </div>
 
 <div th:fragment="chartSettingsModal" class="modal modal-chart-settings" role="dialog">
-    <div class="modal-body pre-scrollable">
-        <p>Choose a chart type, select and reorder columns, or add custom Google Chart options.</p>
-        <select class="chart-type form-select" aria-label="Default select example">
-            <option value='AnnotationChart'>Annotation Chart</option>
-            <option value='AreaChart'>Area Chart</option>
-            <option value='Bar'>Bar Chart</option>
-            <option value='BubbleChart'>Bubble Chart</option>
-            <option value='Calendar'>Calendar Chart</option>
-            <option value='CandlestickChart'>Candlestick Chart</option>
-            <option value='ColumnChart'>Column Chart</option>
-            <option value='ComboChart'>Combo Chart</option>
-            <option value='Gantt'>Gantt Chart</option>
-            <option value='Gauge'>Gauge Chart</option>
-            <option value='GeoChart'>Geo Chart</option>
-            <option value='Histogram'>Histogram</option>
-            <option value='LineChart' selected>Line Chart</option>
-            <option value='Map'>Map Chart</option>
-            <option value='OrgChart'>Org Chart</option>
-            <option value='PieChart'>Pie Chart</option>
-            <option value='Sankey'>Sankey Diagram</option>
-            <option value='ScatterChart'>Scatter Chart</option>
-            <option value='SteppedAreaChart'>Stepped Area Chart</option>
-            <option value='Table'>Table Chart</option>
-            <option value='Timeline'>Timeline Chart</option>
-            <option value='TreeMap'>Tree Map</option>
-            <option value='WordTree'>Word Tree</option>
-            <option disabled>_________</option>
-            <option value='GeoJSONMap'>GeoJSON Map</option>
-        </select>
-        <div class="row justify-content">
-            <div class="sortable-container col-3">
-                <label><input type="checkbox" class="btn-check-all" checked /> All</label>
-                <ul class="sortable"></ul>
-            </div>
-            <div class="form-group col-5">
-                <label>Extra options (JSON):</label>
-                <textarea class="form-control textbox-chart-options" rows="3"></textarea>
-                <button class="btn btn-sm btn-primary btn-apply-chart-options">Apply</button>
-                <p>We use <a href="https://developers.google.com/chart/interactive/docs/gallery" target="_blank">Google Charts</a> and
-                    <a class="leafletjs-info" href="#" title="For GeoJSON Map, a column of GeoJSON values is required, with an optional extra column for the popup values.">LeafletJS GeoJSON Map</a> for the charts,
-                    please refer to these links for more details.</p>
-            </div>
+    <p>Choose a chart type, select and reorder columns, or add custom Google Chart options.</p>
+    <select class="chart-type form-select" aria-label="Default select example">
+        <option value='AnnotationChart'>Annotation Chart</option>
+        <option value='AreaChart'>Area Chart</option>
+        <option value='Bar'>Bar Chart</option>
+        <option value='BubbleChart'>Bubble Chart</option>
+        <option value='Calendar'>Calendar Chart</option>
+        <option value='CandlestickChart'>Candlestick Chart</option>
+        <option value='ColumnChart'>Column Chart</option>
+        <option value='ComboChart'>Combo Chart</option>
+        <option value='Gantt'>Gantt Chart</option>
+        <option value='Gauge'>Gauge Chart</option>
+        <option value='GeoChart'>Geo Chart</option>
+        <option value='Histogram'>Histogram</option>
+        <option value='LineChart' selected>Line Chart</option>
+        <option value='Map'>Map Chart</option>
+        <option value='OrgChart'>Org Chart</option>
+        <option value='PieChart'>Pie Chart</option>
+        <option value='Sankey'>Sankey Diagram</option>
+        <option value='ScatterChart'>Scatter Chart</option>
+        <option value='SteppedAreaChart'>Stepped Area Chart</option>
+        <option value='Table'>Table Chart</option>
+        <option value='Timeline'>Timeline Chart</option>
+        <option value='TreeMap'>Tree Map</option>
+        <option value='WordTree'>Word Tree</option>
+        <option disabled>_________</option>
+        <option value='GeoJSONMap'>GeoJSON Map</option>
+    </select>
+
+    <div class="d-flex flex-row" style="max-height: 80%">
+        <div class="p-2 align-items-center" style="width: 50%">
+            <label><input type="checkbox" class="btn-check-all" checked /> All</label>
+            <ul class="sortable list-group" style="overflow: auto; height: 100%"></ul>
+        </div>
+        <div class="p-2 form-group" style="width: 50%">
+            <label>Extra options (JSON):</label>
+            <textarea class="form-control textbox-chart-options" rows="3"></textarea>
+            <button class="btn btn-sm btn-primary btn-apply-chart-options">Apply</button>
+            <p>We use <a href="https://developers.google.com/chart/interactive/docs/gallery" target="_blank">Google Charts</a> and
+                <a class="leafletjs-info" href="#" title="For GeoJSON Map, a column of GeoJSON values is required, with an optional extra column for the popup values.">LeafletJS GeoJSON Map</a> for the charts,
+                please refer to these links for more details.</p>
         </div>
     </div>
 </div>
