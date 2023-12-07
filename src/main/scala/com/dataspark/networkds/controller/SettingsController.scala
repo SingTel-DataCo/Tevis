@@ -36,7 +36,7 @@ class SettingsController {
     mav.addObject("capexPageEnabled", appService.capexPageEnabled)
     mav.addObject("user", user)
     val dbUser = cache.users.get().users(user.getName)
-    mav.addObject("darkMode", dbUser.darkMode)
+    mav.addObject("colorMode", dbUser.colorMode)
   }
 
   @PostMapping(path = Array("/updatePassword"))
@@ -53,10 +53,10 @@ class SettingsController {
   }
 
   @PostMapping(path = Array("/updateSettings"))
-  def modifyUserSettings(darkMode: Boolean, user: Principal): Boolean = {
+  def modifyUserSettings(colorMode: String, user: Principal): Boolean = {
     val jsonDb = cache.users
     val dbUser = jsonDb.get().users(user.getName)
-    val modifiedUser = dbUser.copy(darkMode = darkMode)
+    val modifiedUser = dbUser.copy(colorMode = colorMode)
     jsonDb.get().users.put(dbUser.username, modifiedUser)
     jsonDb.save()
   }

@@ -1,3 +1,13 @@
+[data-bs-theme="dark"] {
+    .json-string {
+      color: lightgreen;
+    }
+    .json-literal {
+      color: deepskyblue;
+      font-weight: bold;
+    }
+}
+
 /* Root element */
 .json-document {
   padding: 1em 2em;

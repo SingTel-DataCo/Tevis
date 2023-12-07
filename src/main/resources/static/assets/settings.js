@@ -2,16 +2,16 @@
 $(function() {
     $.fn.bootstrapBtn = $.fn.button.noConflict();
 
-    $('#toggle-dark-mode').change(function(){
-        let darkMode = $(this).prop('checked');
-        $("body").attr("data-bs-theme", darkMode ? "dark" : "light");
+    let htmlColorMode = $("html").attr("data-bs-theme");
+    $('input:radio[name=radio-color-mode][value=' + htmlColorMode + ']').prop('checked', true);
+    $('input:radio[name=radio-color-mode]').change(function(){
+        $("html").attr("data-bs-theme", this.value);
     });
 
     $('#btn-save-settings').click(function(){
         $(".overlay").show();
-        let darkMode = $("#toggle-dark-mode").prop('checked');
-
-        $.post( "/settings/updateSettings", {darkMode: darkMode},
+        let colorMode = $('input:radio[name=radio-color-mode]:checked').val();
+        $.post( "/settings/updateSettings", {colorMode: colorMode},
             function(content) {
                 alert("Settings successfully updated.");
         }).fail(function (xhr, status, error) {

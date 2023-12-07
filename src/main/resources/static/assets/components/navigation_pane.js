@@ -312,7 +312,7 @@ class NavigationPane {
         let textToSearch = $("#file-list-filter").val().toLowerCase();
         let filteredTreeData = parent.filterTreeData(treeData, textToSearch);
         parent.updateNavPaneDatasets(filteredTreeData, true);
-        let filteredTabs = parent.searchTabsForText(Object.values(wb.tabs), textToSearch);
+        let filteredTabs = parent.searchTabsForText(wb.tabOrder.map(t => wb.tabs[t]), textToSearch);
         parent.updateNavPaneTabs(filteredTabs);
     }
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-th-attr="data-bs-theme=${darkMode}? 'dark' : 'light'">
+<html data-th-attr="data-bs-theme=${colorMode}">
 <head>
     <th:block th:include="fragments/common.html :: headerFiles"></th:block>
     <script src="/assets/settings.js"></script>
@@ -57,30 +57,45 @@
             </div>
             <div class="tab-content" id="v-pills-tabContent">
                 <div class="tab-pane fade show active" id="v-pills-home" role="tabpanel" aria-labelledby="v-pills-home-tab" tabindex="0">
-                    <div class="col">
-                        <div class="mb-3 row form-check form-switch" style="padding-left: 50px">
-                            <input class="form-check-input" type="checkbox" role="switch" th:checked="${darkMode}" id="toggle-dark-mode">
-                            <label class="form-check-label" for="toggle-dark-mode">Dark mode</label>
+                    <h4>General settings</h4>
+                    <div class="mb-3 row">
+                        <label class="col-sm-3">Color Mode</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="radio-color-mode" id="inlineRadio1" value="auto">
+                                <label class="form-check-label" for="inlineRadio1">Auto</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="radio-color-mode" id="inlineRadio2" value="light">
+                                <label class="form-check-label" for="inlineRadio2">Light</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="radio-color-mode" id="inlineRadio3" value="dark">
+                                <label class="form-check-label" for="inlineRadio3">Dark</label>
+                            </div>
                         </div>
+                        <br/>
+                        <br/>
                         <div class="mb-3 row">
                             <button id="btn-save-settings" class="btn btn-sm btn-outline-primary col col-sm-4">Save changes</button>
                         </div>
                     </div>
+                    <h4>Security</h4>
                     <div class="col">
                         <div class="mb-3 row">
-                            <label for="input-old-password" class="col-sm-2 col-form-label">Old Password</label>
+                            <label for="input-old-password" class="col-sm-3 col-form-label">Old Password</label>
                             <div class="col password-div">
                                 <input type="password" class="form-control" id="input-old-password">
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label for="input-new-password" class="col-sm-2 col-form-label">New Password</label>
+                            <label for="input-new-password" class="col-sm-3 col-form-label">New Password</label>
                             <div class="col password-div">
                                 <input type="password" class="form-control" id="input-new-password">
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label for="input-confirm-password" class="col-sm-2 col-form-label">Confirm Password</label>
+                            <label for="input-confirm-password" class="col-sm-3 col-form-label">Confirm Password</label>
                             <div class="col password-div">
                                 <input type="password" class="form-control" id="input-confirm-password">
                             </div>

@@ -331,3 +331,12 @@ function schemaToTable(jsonObj) {
     text += "<tbody class='ui-widget-content'>" + body + "</tbody></table>"
     return text;
 }
+
+const htmlColorTheme = $("html").attr("data-bs-theme");
+// Listen to OS color theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+    if (htmlColorTheme == "auto") {
+        const newColorScheme = event.matches ? "dark" : "light";
+        $("html").attr("data-bs-theme", newColorScheme);
+    }
+});

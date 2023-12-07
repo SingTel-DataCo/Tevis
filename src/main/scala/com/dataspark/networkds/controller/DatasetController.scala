@@ -53,7 +53,7 @@ class DatasetController {
     mav.addObject("jsEventsMinimize", appService.jsEventsMinimize)
     mav.addObject("capexPageEnabled", appService.capexPageEnabled)
     val dbUser = cache.users.get().users(user.getName)
-    mav.addObject("darkMode", dbUser.darkMode)
+    mav.addObject("colorMode", dbUser.colorMode)
     mav
   }
 

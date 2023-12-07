@@ -1,3 +1,10 @@
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-bs-theme="light"] {
+  color-scheme: light;
+}
 
 html {
   font-family: sans-serif; /* 1 */
@@ -54,7 +61,7 @@ div.inline {
 
 #main {
   width: auto;
-  overflow: scroll;
+  overflow: auto;
 }
 
 #wrapper {
@@ -63,11 +70,6 @@ div.inline {
 
 #chartView {
     margin-bottom: 20px;
-}
-
-#myDiagramDiv {
-    border: solid 1px black;
-    min-height: 70vh;
 }
 
 #footer {

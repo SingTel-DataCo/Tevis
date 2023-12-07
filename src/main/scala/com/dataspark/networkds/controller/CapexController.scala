@@ -46,7 +46,7 @@ class CapexController {
     mav.addObject("capexDir", userData.get().capexDir)
     mav.addObject("jsEventsMinimize", appService.jsEventsMinimize)
     val dbUser = cache.users.get().users(user.getName)
-    mav.addObject("darkMode", dbUser.darkMode)
+    mav.addObject("colorMode", dbUser.colorMode)
     mav
   }
 

@@ -454,7 +454,7 @@ function setCurrentSection(newSectionId) {
 function syncWork(callback) {
     $.post( "/dataset/syncWork", {"workbook" : JSON.stringify(wb)}, function(newWb) {
         wb = newWb;
-        navPane.updateNavPaneTabs(Object.values(wb.tabs));
+        navPane.updateNavPaneTabs(wb.tabOrder.map(t => wb.tabs[t]));
         if (callback != null) {
             callback(wb);
         }
