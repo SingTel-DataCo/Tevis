@@ -175,7 +175,7 @@ function renderDatasetTab(path, ds, fromModule, dependentModules) {
     let tableContainerId = 'tab-' + uniqueName + '-1';
     let dataView = "<div id='" + tableContainerId + "'>"
         + "<div class='input-group'>"
-        + "<textarea class='form-control' placeholder='Enter your SQL statement here' id='sqlBox' rows='1'></textarea>"
+        + "<textarea data-editor='sql' class='form-control' placeholder='Enter your SQL statement here' id='sqlBox' rows='1'></textarea>"
         + "<div>"
         + "<button id='sqlBtn' class='btn btn-sm btn-outline-secondary'>"
         + "<i class='fas fa-search'></i></button>"
@@ -218,7 +218,8 @@ function renderDatasetTab(path, ds, fromModule, dependentModules) {
 
     $(".from-value").click(onModuleClicked);
     $(".to .value").click(onModuleClicked);
-    $("#sqlBox").val(ds.sql);
+    let editor = setupCodeEditor($("#sqlBox"));
+    editor.getSession().setValue(ds.sql);
     $("#sqlBtn").click(function(){
         queryTable($("#sqlBox").val(), ds, tableContainerId);
     });

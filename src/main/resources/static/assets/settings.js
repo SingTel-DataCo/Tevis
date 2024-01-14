@@ -2,10 +2,12 @@
 $(function() {
     $.fn.bootstrapBtn = $.fn.button.noConflict();
 
-    let htmlColorMode = $("html").attr("data-bs-theme");
-    $('input:radio[name=radio-color-mode][value=' + htmlColorMode + ']').prop('checked', true);
+    $('input:radio[name=radio-color-mode][value=' + htmlColorTheme + ']').prop('checked', true);
     $('input:radio[name=radio-color-mode]').change(function(){
-        $("html").attr("data-bs-theme", this.value);
+        const newVal = this.value == "auto" ?
+            (window.matchMedia("(prefers-color-scheme: dark)").matches? "dark" : "light") :
+            this.value;
+        $("html").attr("data-bs-theme", newVal);
     });
 
     $('#btn-save-settings').click(function(){

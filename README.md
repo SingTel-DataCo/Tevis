@@ -12,7 +12,7 @@ Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 
 ## Dataset Browser Features
 1. Load CSV/Parquet files and auto-assign table names
-   - Large files with 100s of columns
+   - Large files with hundreds of columns
    - Columns with very complex schema (e.g. map of list-map pairs)
 2. Query tables using SQL
    - Use [Spark SQL built-in functions](https://spark.apache.org/docs/latest/api/sql/index.html)
@@ -35,14 +35,14 @@ For Windows users, there is no need to install **winutils.exe**
 ### On Windows
 
 1. Download zip file from the [latest release](https://github.com/SingTel-DataCo/Tevis/releases) and unzip it.
-2. Double-click on `run-app.bat`. This will run the application and automatically open your browser at `http://localhost:8080/`
+2. Double-click on `run-app.bat`. This will run the application and automatically open your browser at `http://localhost:8085/`
 3. Default credentials are `dataspark-admin` / `dataspark-admin`.
 
 ### On Mac/Linux
 
 1. Download zip file from the [latest release](https://github.com/SingTel-DataCo/Tevis/releases) and unzip it.
 2. Run Terminal app and go to your Tevis root directory. (e.g. `cd /home/user/tevis-1.0.0`)
-2. Run `run-app.sh`. This will run the application and automatically open your browser at `http://localhost:8080/`
+2. Run `run-app.sh`. This will run the application and automatically open your browser at `http://localhost:8085/`
 3. Default credentials are `dataspark-admin` / `dataspark-admin`.
 
 ## Install and run Tevis on a YARN cluster
@@ -50,10 +50,10 @@ For Windows users, there is no need to install **winutils.exe**
 1. Download tar.gz file and copy it to the edge node of the cluster.
 2. Rename `config/application-cluster.properties` to `config/application.properties`, and update with the correct and necessary Spark/Hadoop paths and configs.
 3. Remove spark and hadoop libraries inside the application `lib` directory to avoid conflict with the cluster's spark and hadoop libraries.
-4. Run `run-app.sh`. This will run the application at port `8080`.
+4. Run `run-app.sh`. This will run the application at port `8085`.
 5. Ensure that your application is accessible outside, otherwise use SSH tunneling.
-   - For SSH tunneling: `ssh -L localhost:8080:localhost:8080 <edge-node-ip>`
-4. On your browser, go to `http://<edge-node-ip>:8080/`
+   - For SSH tunneling: `ssh -L localhost:8085:localhost:8085 <edge-node-ip>`
+4. On your browser, go to `http://<edge-node-ip>:8085/`
 5. Default credentials are `dataspark-admin` / `dataspark-admin`.
 
 ## Limitations

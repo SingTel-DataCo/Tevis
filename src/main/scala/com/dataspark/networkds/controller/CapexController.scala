@@ -41,12 +41,8 @@ class CapexController {
       userData.save()
     }
     val mav: ModelAndView = new ModelAndView("capex_browser")
-    mav.addObject("version", appService.buildVersion)
-    mav.addObject("user", user)
+    appService.addCommonPageObjects(mav, user, cache, parquetService)
     mav.addObject("capexDir", userData.get().capexDir)
-    mav.addObject("jsEventsMinimize", appService.jsEventsMinimize)
-    val dbUser = cache.users.get().users(user.getName)
-    mav.addObject("colorMode", dbUser.colorMode)
     mav
   }
 

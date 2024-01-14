@@ -100,8 +100,80 @@ function initChartSettings(elemId, ds, chartModel, chartRenderedCallback) {
     var mapBase = null, map = null;
     let rerenderChart = function() {
         var chartModel = getChartModel(elemId);
-        if ($(chartSettingsId +' .chart-type').val() == "GeoJSONMap") {
+        if ($(chartSettingsId +' .chart-type').val() == "3DMap") {
+
+            if (!$('head > script[src="https://unpkg.com/deck.gl@latest/dist.min.js"]').length) {
+                $('head').append($('<script />').attr('src','https://api.mapbox.com/mapbox-gl-js/v1.13.0/mapbox-gl.js'));
+                $('head').append($('<link />').attr('href','https://api.mapbox.com/mapbox-gl-js/v1.13.0/mapbox-gl.css').attr('rel', 'stylesheet'));
+                $('head').append($('<script />').attr('src','https://unpkg.com/deck.gl@latest/dist.min.js'));
+                $('head').append($('<script />').attr('src','https://unpkg.com/@deck.gl/carto@latest/dist.min.js'));
+                $('head').append($('<script />').attr('src','https://unpkg.com/@deck.gl/mesh-layers@latest/dist.min.js'));
+                $('head').append($('<script />').attr('src','https://unpkg.com/@loaders.gl/obj@3.0/dist/dist.min.js'));
+            }
+            $.getScript('https://unpkg.com/deck.gl@latest/dist.min.js', function(){
+
+                const initCoords = ds.data[0].coordinates;
+                $(elemId + " .map3d").show();
+                $(elemId + " .map").hide();
+                $(elemId + " .dynamic-chart").hide();
+                 //https://deck.gl/docs/api-reference/mesh-layers/simple-mesh-layer
+                 const {DeckGL, SimpleMeshLayer} = deck;
+                 const {OBJLoader} = loaders;
+
+                 const layer = new SimpleMeshLayer({
+                   id: 'SimpleMeshLayer',
+                   data: ds.data,
+                   /* props from SimpleMeshLayer class */
+                   getColor: d => [75, 140, 0],
+                   getOrientation: d => [0, Math.random() * 180, 0],
+                   getPosition: d => d.coordinates,
+                   // getScale: [1, 1, 1],
+                   // getTransformMatrix: [],
+                   // getTranslation: [0, 0, 0],
+                   // material: true,
+                   mesh: 'assets/images/cell_tower.obj',
+                   sizeScale: 30,
+                   // texture: null,
+                   // textureParameters: null,
+                   // wireframe: false,
+
+                   /* props inherited from Layer class */
+
+                   // autoHighlight: false,
+                   // coordinateOrigin: [0, 0, 0],
+                   // coordinateSystem: COORDINATE_SYSTEM.LNGLAT,
+                   // highlightColor: [0, 0, 128, 128],
+                   loaders: [OBJLoader],
+                   // modelMatrix: null,
+                   // opacity: 1,
+                   pickable: true,
+                   // visible: true,
+                   // wrapLongitude: false,
+                   ...chartModel.extraOptions
+                 });
+
+                 new DeckGL({
+                   container: $(elemId + " .map3d")[0],
+                   mapStyle: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+                   initialViewState: {
+                     longitude: initCoords[0],
+                     latitude: initCoords[1],
+                     zoom: 11,
+                     maxZoom: 20,
+                     pitch: 30,
+                     bearing: 0
+                   },
+                   controller: true,
+                   getTooltip: ({object}) => object && `${object.info}
+                 ${object.info}`,
+                   layers: [layer]
+                 });
+            });
+
+        }
+        else if ($(chartSettingsId +' .chart-type').val() == "GeoJSONMap") {
             $(elemId + " .map").show();
+            $(elemId + " .map3d").hide();
             $(elemId + " .dynamic-chart").hide();
             if (map == null) {
                 mapBase = initMapSettings(elemId);
@@ -128,10 +200,12 @@ function initChartSettings(elemId, ds, chartModel, chartRenderedCallback) {
             mapBase.fitBounds(map.getBounds());
         } else {
             $(elemId + " .map").hide();
+            $(elemId + " .map3d").hide();
             $(elemId + " .dynamic-chart").show();
             let dsData = ds.data.map(function(d){ return chartModel.selectedColumns.map(function(k){
-                return typeof d[k] === "object" ? JSON.stringify(d[k]) : (k.toLowerCase().includes("date") ? new Date(d[k]) : d[k]) }) });
+                return typeof d[k] === "object" && d[k] && !k.toLowerCase().includes("date") ? JSON.stringify(d[k]) : d[k] }) });
             dsData.unshift(chartModel.selectedColumns);
+            dsData[0] = dsData[0].map(cell => cell.startsWith("role_") ? {"role": cell.split('_')[1]} : cell);
             renderChart(ds, dsData, elemId, chartModel);
         }
         if (chartRenderedCallback) chartRenderedCallback(chartModel);
@@ -179,7 +253,7 @@ function renderChart(ds, dsData, elemId, chartModel) {
 
     google.charts.load('current', {'packages':['corechart']}).then(function () {
 
-       var data = google.visualization.arrayToDataTable(dsData);
+        var data = google.visualization.arrayToDataTable(dsData);
         var options = {
           theme: 'maximized',
           title: ds.name,
@@ -332,11 +406,50 @@ function schemaToTable(jsonObj) {
     return text;
 }
 
+const systemSettingDark = window.matchMedia("(prefers-color-scheme: dark)");
 const htmlColorTheme = $("html").attr("data-bs-theme");
+changeColorMode(systemSettingDark);
+
 // Listen to OS color theme changes
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+systemSettingDark.addEventListener('change', changeColorMode);
+
+function changeColorMode(event) {
     if (htmlColorTheme == "auto") {
         const newColorScheme = event.matches ? "dark" : "light";
         $("html").attr("data-bs-theme", newColorScheme);
     }
-});
+}
+
+function setupCodeEditor(textarea) {
+    var mode = textarea.data('editor');
+    var editDiv = $('<div>', {
+      position: 'absolute',
+      'class': textarea.attr('class') + ' ace-edit-box'
+    }).insertBefore(textarea);
+    textarea.css('display', 'none');
+    var editor = ace.edit(editDiv[0]);
+    editor.renderer.setScrollMargin(10, 1)
+    editor.setOptions({wrap: true, maxLines: 100, showPrintMargin: false,
+        highlightActiveLine: false, enableLiveAutocompletion: true});
+    editor.getSession().setValue(textarea.val());
+    editor.getSession().setMode("ace/mode/" + mode);
+    //This means we only need to update the ACE editor to auto-update the textarea.
+    editor.getSession().on('change', function () {
+      textarea.val(editor.getSession().getValue());
+    });
+    editor.setTheme("ace/theme/cloud_editor");
+    return editor;
+}
+
+function formatDate(data, schema) {
+    let cols = Object.entries(schema).filter(e => e[1].type == 'date' || e[1].type == 'timestamp')
+        .map(e => e[0])
+    return data.map(r => {
+        let newO = {};
+        Object.entries(r).forEach(([k, v]) => {
+            let newV = (cols.includes(k) && v ? new Date(v) : v);
+            newO[k] = newV;
+        });
+        return newO;
+    });
+}

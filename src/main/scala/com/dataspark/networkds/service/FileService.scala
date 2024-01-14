@@ -3,6 +3,7 @@ package com.dataspark.networkds.service
 import com.dataspark.networkds.beans.QueryTx
 import com.dataspark.networkds.util.E2EVariables
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.fs.{FileStatus, Path}
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
@@ -13,6 +14,8 @@ class FileService {
 
   @Value("${data_dir}")
   var dataDir: String = _
+
+  private val acceptedFileTypes = Seq(".parquet", ".csv", "json")
 
   def writeQueryTxAsync(queryTx: QueryTx): Unit = {
     new Thread{
@@ -61,6 +64,9 @@ class FileService {
     queryFiles.foreach(f => f.delete())
     queryFiles.length
   }
+
+  def isValidDataFile(f: FileStatus): Boolean = isValidDataFile(f.getPath)
+  def isValidDataFile(f: Path): Boolean = acceptedFileTypes.exists(f.getName.endsWith)
 
 
 }

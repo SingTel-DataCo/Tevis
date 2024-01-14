@@ -31,7 +31,7 @@ $(function() {
                   {
                      text: "<i class='fa fa-user'></i> <span>New User</span>",
                      action: function ( e, dt, node, config ) {
-                        let rowDataEmpty = {username: "", role: ""};
+                        let rowDataEmpty = {username: "", role: "USER"};
                         showUserDialog(false, rowDataEmpty);
                      }
                   },

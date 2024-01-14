@@ -42,11 +42,7 @@ class AdminController {
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
     val mav: ModelAndView = new ModelAndView("admin")
-    mav.addObject("version", appService.buildVersion)
-    mav.addObject("capexPageEnabled", appService.capexPageEnabled)
-    mav.addObject("user", user)
-    val dbUser = cache.users.get().users(user.getName)
-    mav.addObject("colorMode", dbUser.colorMode)
+    appService.addCommonPageObjects(mav, user, cache, parquetService)
     mav
   }
 

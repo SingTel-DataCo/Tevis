@@ -5,10 +5,10 @@ import com.dataspark.networkds.config.SparkConfig
 import com.dataspark.networkds.util.{DatasetUtil, E2EConfigUtil, E2EPipelineVisualizer, E2EVariables, SparkHadoopUtil, Str}
 import org.apache.commons.io.FilenameUtils
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
+import org.apache.hadoop.fs.{FileStatus, FileSystem, Path, PathFilter}
 import org.slf4j.LoggerFactory
 import org.apache.spark.SparkException
-import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, DataFrame, Encoders, Row, SparkSession}
 import org.springframework.beans.factory.annotation.{Autowired, Value}
 import org.springframework.stereotype.Service
 
@@ -98,7 +98,8 @@ class ParquetService {
     if (!refresh && spark.catalog.tableExists(hfile.table)) {
       spark.read.table(hfile.table)
     } else {
-      val df = if (hfile.path.toLowerCase.contains("csv")) readCsvFile(hfile)
+      val df = if (hfile.path.toLowerCase.endsWith(".json")) readJsonFile(hfile)
+      else if (hfile.path.toLowerCase.contains("csv")) readCsvFile(hfile)
       else {
         try {
           spark.read.parquet(hfile.path)
@@ -131,6 +132,12 @@ class ParquetService {
     tmpDf
   }
 
+  def readJsonFile(hfile: HFile): DataFrame = {
+    val tmpDf = spark.read.json(hfile.path)
+    hfile.format = "json"
+    tmpDf
+  }
+
   def getSchema(df: DataFrame): ListMap[String, Any] = {
     ListMap(df.schema.map(x =>
       (x.name, Map("type" -> x.dataType.simpleString, "nullable" -> x.nullable))): _*)
@@ -149,7 +156,7 @@ class ParquetService {
     try {
       queryAndGetJson(sql)
     } catch {
-      case e: SparkException =>
+      case e @ (_ : SparkException | _ : AnalysisException) =>
         log.warn(e.getMessage)
         val tablesToRefresh = "(?i)FROM\\s+(\\w+)".r.findAllMatchIn(sql).toSeq.map(_.group(1))
           .filter(spark.catalog.tableExists)
@@ -196,13 +203,16 @@ class ParquetService {
     getCsvFile(path)
   }
 
-  def queryDf(sql: String): DataFrame = {
-    validateSql(sql)
-    val tokens = sql.split(";")
-    if (sql.startsWith("%scala")) {
-      runScalaCode(sql.replaceAll("%scala", ""))
+  def queryDf(code: String): DataFrame = {
+    validateSql(code)
+    if (code.startsWith("%scala")) {
+      runScalaCode(code.replaceAll("%scala", ""))
+    } else if (code.startsWith("%") && !code.startsWith("%sql")) {
+      throw new SparkException(s"Invalid directive '${code.split("\\s+")(0)}'")
     }
     else {
+      val sql = code.replaceAll("%sql", "")
+      val tokens = sql.split(";")
       var df2 = spark.sql(tokens(0))
       if (tokens.length > 1) {
         val command = tokens(1).trim.toLowerCase()
@@ -293,23 +303,23 @@ class ParquetService {
     csvFile
   }
 
-  def listFiles(rootDir: String): Seq[DsFile] = {
+  def listFiles(rootDir: String, includeDirs: Boolean = false): Seq[DsFile] = {
     val rootPath = new Path(rootDir)
-    val csvFile = new File(rootDir) //must be a local CSV file, just in case Hadoop path doesn't exist
+    val localFile = new File(rootDir) //must be a local data file, just in case Hadoop path doesn't exist
     val fs = getFs(rootDir)
     if (fs.exists(rootPath) && fs.isDirectory(rootPath)) {
-      val iterator = fs.listFiles(rootPath, false)
-      val list = new ListBuffer[FileStatus]
-      while (iterator.hasNext) {
-        list += iterator.next()
-      }
+      val list = fs.listStatus(rootPath, new PathFilter {
+        override def accept(path: Path): Boolean =
+          (fs.isFile(path) && fileService.isValidDataFile(path)) ||
+            (includeDirs && fs.isDirectory(path) && !path.getName.startsWith("."))
+      })
       list.par.map(p => {
         val path = p.getPath
         val fileStat = fs.getFileStatus(path)
-        DsFile(path.getName, new Timestamp(fileStat.getModificationTime), fileStat.getLen)
+        DsFile(path.getName, new Timestamp(fileStat.getModificationTime), fileStat.getLen, null, fileStat.isDirectory)
       }).seq
-    } else if (rootDir.endsWith(".csv") && (fs.exists(rootPath) || csvFile.exists())) {
-      Seq(DsFile(csvFile.getName, new Timestamp(csvFile.lastModified()), csvFile.length()))
+    } else if (fs.exists(rootPath) || localFile.exists()) {
+      Seq(DsFile(localFile.getName, new Timestamp(localFile.lastModified()), localFile.length()))
     } else throw new FileNotFoundException(s"$rootDir does not exist")
   }
 
@@ -390,13 +400,17 @@ class ParquetService {
             list += HFile(parentPath.toString, fs.getContentSummary(parentPath).getLength, tableName)
           }
         }
-        if (!successFileFound) {
-          tmpList.map(f => {
-            val filePath = f.getPath
-            val tableName = generateUniqueTableName(filePath.toString, rootDir)
-            list += HFile(filePath.toString, fs.getContentSummary(filePath).getLength, tableName)
+        val validFiles = if (successFileFound) {
+          tmpList.filter(fileService.isValidDataFile).filter(tf => {
+            val parentPath = tf.getPath.getParent.toString
+            !list.exists(f => parentPath.contains(f.path))
           })
-        }
+        } else tmpList.filter(fileService.isValidDataFile)
+        validFiles.map(f => {
+          val filePath = f.getPath
+          val tableName = generateUniqueTableName(filePath.toString, rootDir)
+          list += HFile(filePath.toString, fs.getContentSummary(filePath).getLength, tableName)
+        })
 
         // Pre-load the files, register each as a new table in the database.
         new Thread{
@@ -422,6 +436,10 @@ class ParquetService {
 
   def readCapexDir(capexDir: String): immutable.Map[String, Any] = {
     e2eVisualizer.generateVisualization(capexDir)
+  }
+
+  def isSparkAlive: Boolean = {
+    mySparkSession != null && !mySparkSession.sparkContext.isStopped
   }
 
   def stopSpark(): Boolean = {

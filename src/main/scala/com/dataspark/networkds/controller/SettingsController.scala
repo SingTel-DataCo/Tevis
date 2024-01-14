@@ -27,16 +27,18 @@ class SettingsController {
   @Autowired
   private var appService: AppService = _
 
+  @Autowired
+  private var parquetService: ParquetService = _
+
   val log = LogManager.getLogger(this.getClass.getSimpleName)
 
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
     val mav: ModelAndView = new ModelAndView("settings")
-    mav.addObject("version", appService.buildVersion)
-    mav.addObject("capexPageEnabled", appService.capexPageEnabled)
-    mav.addObject("user", user)
-    val dbUser = cache.users.get().users(user.getName)
-    mav.addObject("colorMode", dbUser.colorMode)
+    appService.addCommonPageObjects(mav, user, cache, parquetService)
+    mav.addObject("sparkUiWebUrl",
+      if (parquetService.isSparkAlive) parquetService.mySparkSession.sparkContext.uiWebUrl.get else "")
+    mav
   }
 
   @PostMapping(path = Array("/updatePassword"))
