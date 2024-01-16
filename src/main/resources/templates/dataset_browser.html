@@ -1,60 +1,16 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" data-th-attr="data-bs-theme=${colorMode}">
 <head>
-    <th:block th:include="fragments/common.html :: headerFiles"></th:block>
+    <th:block th:include="fragments/head.html :: ${#strings.concat('headerFiles', offlineImport)}"></th:block>
     <script src="/assets/components/navigation_pane.js"></script>
     <script src="/assets/index.js"></script>
     <link rel="stylesheet" href="/assets/index.css">
 </head>
 
 <body>
-<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-    <a class="navbar-brand" href="/">
-        <div><span id="sidebarHeader">
-            <img src="/assets/images/logo-header.png" width="120" style="padding-left: 20px" /></span> <span id="version">[(${version})]</span>
-        </div>
-    </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarCollapse">
-        <ul class="navbar-nav">
-            <li class="nav-item dropdown">
-                <a class="nav-link active dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Dataset Browser
-                </a>
-                <ul class="dropdown-menu">
-                    <div th:if="${capexPageEnabled}">
-                        <li><a class="dropdown-item" href="/capex">Module Browser</a></li>
-                    </div>
-                    <li><a class="dropdown-item" href="/dataset">Dataset Browser</a></li>
-                </ul>
-            </li>
 
-            <li><button id="btn-show-modal-new-ds" class="nav-link dropdown-item"><i class="fa fa-plus-square"></i> New Dataset</button></li>
-        </ul>
-        <div id="update-form" style="padding: 0 0 0 15px; width: 65%">
-            <div class="input-group">
-                <input type="hidden" id="input-path" th:value="${dataRootDir}">
-            </div>
-        </div>
-        <ul class="navbar-nav">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fa fa-user"></i> [(${user.name})]
-                </a>
-                <ul class="dropdown-menu">
-                    <div th:if="${#strings.contains(user.authorities,'ADMIN')}">
-                        <li><a class="dropdown-item" href="/admin">Admin</a></li>
-                        <li class="dropdown-divider"></li>
-                    </div>
-                    <li><a class="dropdown-item" href="/settings">Settings</a></li>
-                    <li><a class="dropdown-item" href="/logout">Logout</a></li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-</nav>
+<nav th:with="pageName='Dataset Browser'" th:block th:insert="fragments/navbar.html :: navbar"></nav>
+<input type="hidden" id="input-path" th:value="${dataRootDir}">
 
 <div id="wrapper">
     <div id="mySidebar">
@@ -83,10 +39,13 @@
         <ul class="nav nav-tabs ui-widget-header" role="tablist">
             <button id="btn-add-tab" class="btn btn-sm"><i class="fa fa-plus"></i></button>
         </ul>
-        <div class="btn-group flex-wrap tab-actions" style="border: grey; padding: 5px 0">
-            <button class="btn btn-sm btn-secondary btn-new-section" title="New section"><i class="fa fa-plus"></i></button>
-            <button class="btn btn-sm btn-secondary btn-toggle-collapse-all" title="Expand/collapse all sections"><i class="fa fa-angles-down"></i></button>
-            <button class="btn btn-sm btn-secondary btn-share-tab" title="Share this tab"><i class="fa fa-share"></i></button>
+        <div class="tab-actions">
+            <div class="flex-wrap" style="border: grey; margin: 5px">
+                <button class="btn btn-sm btn-secondary btn-new-section" title="New section"><i class="fa fa-file-circle-plus"></i></button>
+                <button class="btn btn-sm btn-secondary btn-toggle-collapse-all" title="Expand/collapse all sections"><i class="fa fa-angles-down"></i></button>
+                <button class="btn btn-sm btn-secondary btn-toggle-hide-editors" title="Show/hide text editors"><i class="fa fa-text-slash"></i></button>
+                <button class="btn btn-sm btn-secondary btn-share-tab" title="Share this tab"><i class="fa fa-share"></i></button>
+            </div>
         </div>
         <!-- Tab panes -->
         <div class="tab-content">
@@ -110,7 +69,7 @@
     </div>
 </div>
 
-<script src="/assets/vendor/bootstrap.bundle.min.js"></script>
+<th:block th:include="fragments/head.html :: ${#strings.concat('bootstrapJs', offlineImport)}"></th:block>
 </body>
 
 

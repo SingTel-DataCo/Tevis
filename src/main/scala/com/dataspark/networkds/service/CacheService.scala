@@ -67,12 +67,12 @@ class CacheService {
   }
 
   def getParquetDirOrElseUpdate(key: String, valueGenerator: () => Map[String, HFile]): Map[String, HFile] = {
-    val dirs = parquetDirs.get()
-    if (!dirs.dirs.contains(key)) {
-      parquetDirs.get().dirs.put(key, valueGenerator.apply())
+    val jsonDb = parquetDirs.get()
+    if (!jsonDb.dirs.contains(key)) {
+      jsonDb.dirs.put(key, valueGenerator.apply())
       parquetDirs.save()
     }
-    parquetDirs.get().dirs(key)
+    jsonDb.dirs(key)
   }
 
   def getAllExistingTablesStartingWith(tblName: String): Seq[String] = {

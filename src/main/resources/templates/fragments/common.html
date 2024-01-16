@@ -1,39 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:fragment="headerFiles">
-    <title>TeVis - E2E Pipeline Visualization</title>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-
-    <script src="/assets/vendor/jquery-3.6.0.min.js"></script>
-    <script src="/assets/vendor/jquery-ui-1.13.2.min.js"></script>
-    <script src="/assets/vendor/jquery.dataTables-1.13.2.min.js"></script>
-    <script src="/assets/vendor/dataTables.bootstrap5-1.13.2.min.js"></script>
-    <script src="/assets/vendor/dataTables.buttons-2.3.4.min.js"></script>
-    <script src="/assets/vendor/buttons.colVis.min.js"></script>
-    <script type="text/javascript" language="javascript" src="/assets/vendor/buttons.html5-2.3.4.min.js"></script>
-    <script src="/assets/vendor/buttons.bootstrap5-2.3.4.min.js"></script>
-    <script src="/assets/vendor/jquery.json-viewer.js"></script>
-    <script src="/assets/vendor/fontawesome-all-6.2.1.min.js"></script>
-    <script src="/assets/vendor/google-charts-loader.js"></script>
-    <link rel="stylesheet" href="/assets/vendor/bootstrap-5.3.0.min.css" />
-    <link rel="stylesheet" href="/assets/vendor/jquery-ui-1.13.2.min.css" />
-    <link rel="stylesheet" href="/assets/vendor/dataTables.bootstrap5-1.13.2.min.css" />
-    <link rel="stylesheet" href="/assets/vendor/jquery.json-viewer.css" />
-    <link rel="stylesheet" href="/assets/vendor/fontawesome-all-6.2.1.min.css" />
-    <link rel="stylesheet" href="/assets/vendor/buttons.bootstrap5-2.3.4.min.css" />
-    <link rel="stylesheet" href="/assets/vendor/sidebars.css" />
-    <link rel="stylesheet" href="/assets/vendor/leaflet.css" />
-    <script src="/assets/vendor/leaflet.js"></script>
-
-    <script src="/assets/common.js"></script>
-    <link rel="stylesheet" href="/assets/common.css" />
-    <script th:inline="javascript">
-        let jsEventsMinimize = /*[[${jsEventsMinimize}]]*/ false;
-    </script>
-</head>
 <body>
+
 <div th:fragment="rowDetailsModal" id="rowDetailsTemplate">
     <div class="modal modal-row-details" role="dialog">
         <textarea class="text-viewer" readonly></textarea>
@@ -52,11 +20,16 @@
 </div>
 
 <div th:fragment="newDatasetModal" id="newDatasetTemplate">
-    <div class="modal modal-new-dataset" role="dialog">
-        <form id="form-new-dataset" class="input-group mb-3 pt-3">
+    <div class="modal modal-new-dataset small" style="overflow: hidden">
+        <div id="form-new-dataset" class="input-group">
+            <button id="btn-new-ds-back" class="btn btn-sm btn-secondary"><i class="fa fa-angle-left"></i></button>
+            <button id="btn-new-ds-home" class="btn btn-sm btn-secondary"><i class="fa fa-house"></i></button>
             <input type="text" id="new-dataset-path" class="form-control" required>
-            <button id="btn-add-dataset" class="btn btn-outline-secondary" type="submit"><i class="fa fa-add"></i></button>
-        </form>
+            <button id="btn-new-ds-browse" class="btn btn-sm btn-secondary"><i class="fa fa-magnifying-glass"></i></button>
+        </div>
+        <div id="table-file-explorer">
+            <table class="table-striped table-hover text-nowrap"></table>
+        </div>
         <div class='loading d-none lds-ellipsis'><div></div><div></div><div></div><div></div></div>
     </div>
 </div>
@@ -66,7 +39,7 @@
     <select class="chart-type form-select" aria-label="Default select example">
         <option value='AnnotationChart'>Annotation Chart</option>
         <option value='AreaChart'>Area Chart</option>
-        <option value='Bar'>Bar Chart</option>
+        <option value='BarChart'>Bar Chart</option>
         <option value='BubbleChart'>Bubble Chart</option>
         <option value='Calendar'>Calendar Chart</option>
         <option value='CandlestickChart'>Candlestick Chart</option>
@@ -77,7 +50,6 @@
         <option value='GeoChart'>Geo Chart</option>
         <option value='Histogram'>Histogram</option>
         <option value='LineChart' selected>Line Chart</option>
-        <option value='Map'>Map Chart</option>
         <option value='OrgChart'>Org Chart</option>
         <option value='PieChart'>Pie Chart</option>
         <option value='Sankey'>Sankey Diagram</option>
@@ -89,6 +61,7 @@
         <option value='WordTree'>Word Tree</option>
         <option disabled>_________</option>
         <option value='GeoJSONMap'>GeoJSON Map</option>
+        <option value='3DMap'>3D Map</option>
     </select>
 
     <div class="d-flex flex-row" style="max-height: 80%">
@@ -99,7 +72,7 @@
         <div class="p-2 form-group" style="width: 50%">
             <label>Extra options (JSON):</label>
             <textarea class="form-control textbox-chart-options" rows="3"></textarea>
-            <button class="btn btn-sm btn-primary btn-apply-chart-options">Apply</button>
+            <button class="btn btn-sm btn-primary my-2 btn-apply-chart-options">Apply</button>
             <p>We use <a href="https://developers.google.com/chart/interactive/docs/gallery" target="_blank">Google Charts</a> and
                 <a class="leafletjs-info" href="#" title="For GeoJSON Map, a column of GeoJSON values is required, with an optional extra column for the popup values.">LeafletJS GeoJSON Map</a> for the charts,
                 please refer to these links for more details.</p>
@@ -156,6 +129,7 @@
         </div>
         <div class="dynamic-chart"></div>
         <div class="map"></div>
+        <div class="map3d" style="height: 100%"></div>
         <div th:replace="fragments/common.html :: chartSettingsModal" />
     </div>
 </div>
@@ -180,7 +154,7 @@
         <div id="collapseId" class="accordion-collapse collapse show" aria-labelledby="headingId">
             <div class="description text-muted"></div>
             <div class="input-group">
-                <textarea class="form-control search-box" placeholder="Enter your SQL statement here" rows="1"></textarea>
+                <textarea data-editor="sql" class="form-control search-box" placeholder="Enter your SQL statement here"></textarea>
                 <div>
                     <button class="btn btn-sm btn-outline-secondary search-btn" title="Run the query (Ctrl + Enter)">
                         <i class="fa fa-play"></i>
@@ -198,7 +172,7 @@
             </div>
             <div class="alert alert-warning query-warning"></div>
             <div class="dataTable">
-                <h4 class="text-muted msg-enter-sql" style="padding: 20px; text-align: center">Enter your SQL statements or click on a dataset on the navigation pane to start browsing.</h4>
+                <h4 class="text-muted msg-enter-sql" style="padding: 20px; text-align: center">Enter your SQL statements or select a dataset to browse from the navigation pane.</h4>
             </div>
         </div>
     </div>
@@ -218,7 +192,7 @@
     <div class="tab-pane active" id="tabContentId" role="tabpanel" aria-labelledby="tabId">
         <div class="accordion">
         </div>
-        <div>
+        <div style="margin: 0 4px">
             <button class="btn btn-outline-secondary btn-new-section" style="width: 100%; font-size: xx-small">New Section</button>
         </div>
     </div>
@@ -236,6 +210,7 @@
                     <li><button class="dropdown-item btn-tmplt-select-cols">SELECT (all columns) ...</button></li>
                     <li><button class="dropdown-item btn-tmplt-code">SELECT COUNT(*) FROM {table}</button></li>
                     <li><button class="dropdown-item btn-tmplt-cache-table">CACHE TABLE ...</button></li>
+                    <li><button class="dropdown-item btn-tmplt-desc-stats">Show descriptive stats</button></li>
                     <li><button class="dropdown-item btn-tmplt-pivot" language="sql">PIVOT</button></li>
                     <li><button class="dropdown-item btn-tmplt-code">DESCRIBE {table}</button></li>
                     <li class="dropdown-divider"></li>
@@ -245,7 +220,10 @@
             <li class="btn btn-sm btn-outline-secondary btn-sql-templates" title="Scala templates"><span href="#"><i class='fa fa-rectangle-list'></i></span>
                 <ul class="dropdown-menu" aria-labelledby="btn-sql-templates" style="font-size: small">
                     <li><button class="dropdown-item btn-tmplt-df-show">Show top 100 rows</button></li>
+                    <li><button class="dropdown-item btn-tmplt-df-desc-stats">Show descriptive stats</button></li>
                     <li><button class="dropdown-item btn-tmplt-pivot" language="scala">Pivot</button></li>
+                    <li class="dropdown-divider"></li>
+                    <li><button class="dropdown-item btn-tmplt-parquet">Export to Parquet</button></li>
                 </ul>
             </li>
         </ul>

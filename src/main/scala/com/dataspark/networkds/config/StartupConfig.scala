@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.{Autowired, Value}
 import org.springframework.context.annotation.Configuration
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
+import org.springframework.core.env.Environment
 
 import java.awt.Desktop
 import java.io.IOException
@@ -20,15 +21,23 @@ class StartupConfig {
   @Autowired
   private var appService: AppService = _
 
+  @Autowired
+  var env: Environment = _
+
   @Value("${server.port}")
   var serverPort: Int = _
+
+  @Value("${startup.no.browser.launch:false}")
+  var noBrowserLaunch: Boolean = _
 
   @EventListener(Array(classOf[ApplicationReadyEvent]))
   def applicationReadyEvent(): Unit = {
     printLogo()
     val serverUrl = "http://localhost:" + serverPort
-    log.info("Launching browser: " + serverUrl)
-    browse(serverUrl)
+    if (!noBrowserLaunch) {
+      log.info("Launching browser: " + serverUrl)
+      browse(serverUrl)
+    }
   }
 
   def printLogo(): Unit = {

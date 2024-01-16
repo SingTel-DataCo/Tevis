@@ -24,7 +24,7 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   }
 
   override def configure(http: HttpSecurity) = {
-    http.authorizeRequests.antMatchers("/swagger-ui.html", "/data/*.json", "/assets/**", "/configuration/**", "/swagger-resources", "/v2/**").permitAll
+    http.authorizeRequests.antMatchers("/swagger-ui.html", "/data/*.json", "/assets/**", "/configuration/**", "/swagger-resources", "/v2/**", "/register").permitAll
     http.formLogin.loginPage("/login")
       .failureUrl("/login?error=true").permitAll()
     http.logout.permitAll

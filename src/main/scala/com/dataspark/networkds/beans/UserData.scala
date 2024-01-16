@@ -33,7 +33,7 @@ case class HFile(path: String, size: Long,
 
 //List of hadoop files and their file properties (e.g. timestamp, size)
 case class DsFiles(dirs: mutable.Map[String, Seq[DsFile]] = mutable.Map())
-case class DsFile(filename: String, date: Timestamp, size: Long, path: String = null)
+case class DsFile(filename: String, date: Timestamp, size: Long, path: String = null, isDir: Boolean = false)
 
 case class QueryTx(queryId: String, date: Timestamp, user: String, query: HFileData)
 

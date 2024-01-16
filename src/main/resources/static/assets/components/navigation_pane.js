@@ -78,7 +78,7 @@ class NavigationPane {
                 let node = { text: btnActions.attr("filename"), path: rootDir };
                 let currSection = wb.tabs[wb.currentTab].currentSection;
                 let sql = $(this).text().replace("{table}", node.text);
-                $(currSection + " .search-box").val(sql);
+                ace.edit($(currSection + " .ace-edit-box")[0]).getSession().setValue(sql);
                 $(currSection + " .search-btn").trigger("click");
             }
         });
@@ -94,6 +94,13 @@ class NavigationPane {
             if (btnActions.attr("act-on") == "file-item") {
                 let node = { text: btnActions.attr("filename"), path: rootDir };
                 self.generateAndRunSql(node, rootDir, "CACHE_TABLE");
+            }
+        });
+        btnActions.find(".btn-tmplt-desc-stats").click(function(e){
+            let rootDir = btnActions.attr("rootDir");
+            if (btnActions.attr("act-on") == "file-item") {
+                let node = { text: btnActions.attr("filename"), path: rootDir };
+                self.generateAndRunSql(node, rootDir, "DESCRIPTIVE_STATS");
             }
         });
         btnActions.find(".btn-tmplt-pivot").click(function(e){
@@ -158,8 +165,32 @@ class NavigationPane {
                 let code = "%scala\n" +
                     "val df = spark.read.table(\"" + node.text + "\")\n" +
                     "df.limit(100)";
-                $(currSection + " .search-box").val(code);
+                ace.edit($(currSection + " .ace-edit-box")[0]).getSession().setValue(code);
                 $(currSection + " .search-btn").trigger("click");
+            }
+        });
+        btnActions.find(".btn-tmplt-df-desc-stats").click(function(e){
+            let rootDir = btnActions.attr("rootDir");
+            if (btnActions.attr("act-on") == "file-item") {
+                let node = { text: btnActions.attr("filename"), path: rootDir };
+                let currSection = wb.tabs[wb.currentTab].currentSection;
+                let code = "%scala\n" +
+                    "val df = spark.read.table(\"" + node.text + "\")\n" +
+                    "df.summary()";
+                ace.edit($(currSection + " .ace-edit-box")[0]).getSession().setValue(code);
+                $(currSection + " .search-btn").trigger("click");
+            }
+        });
+        btnActions.find(".btn-tmplt-parquet").click(function(e){
+            let rootDir = btnActions.attr("rootDir");
+            if (btnActions.attr("act-on") == "file-item") {
+                let node = { text: btnActions.attr("filename"), path: rootDir };
+                let currSection = wb.tabs[wb.currentTab].currentSection;
+                let code = "%scala\n" +
+                    "val df = spark.read.table(\"" + node.text + "\")\n" +
+                    "df.coalesce(1).write.parquet(\"" + rootDir + "/" + "_parquet\")\n" +
+                    "df.limit(1)";
+                ace.edit($(currSection + " .ace-edit-box")[0]).getSession().setValue(code);
             }
         });
         btnActions.tooltip();
@@ -302,7 +333,6 @@ class NavigationPane {
             }, {});
             let fSectionIds = Object.keys(nt.sections);
             nt.sectionOrder = t.sectionOrder.filter(s => fSectionIds.includes(s));
-            console.log(nt);
             return nt;
         }).filter(t => t.sectionOrder.length > 0);
         return ft;
@@ -322,7 +352,7 @@ class NavigationPane {
         let finalParams = Object.assign(params, extraParams)
         $.get( "/dataset/generateSql", finalParams, function(resp) {
             let currSection = wb.tabs[wb.currentTab].currentSection;
-            $(currSection + " .search-box").val(resp.sql);
+            ace.edit($(currSection + " .ace-edit-box")[0]).getSession().setValue(resp.sql);
             $(currSection + " .search-btn").trigger("click");
         }).fail(function (xhr, status, error) {
             $(".overlay").hide();

@@ -1,13 +1,14 @@
 package com.dataspark.networkds.controller
 
 import com.dataspark.networkds.beans.{HFile, HFileData, QueryTx, Section, Tab, Workbook}
-import com.dataspark.networkds.service.{AppService, CacheService, FileService, ParquetService}
+import com.dataspark.networkds.service.{AppService, CacheService, FileService, ParquetService, ShareService}
 import com.dataspark.networkds.util.{E2EConfigUtil, E2EVariables, Str}
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.{InputStreamResource, Resource}
 import org.springframework.http.{MediaType, ResponseEntity}
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.annotation.{CrossOrigin, GetMapping, PostMapping, RequestMapping, RequestParam, ResponseBody, RestController}
 import org.springframework.web.servlet.ModelAndView
 
@@ -32,6 +33,9 @@ class DatasetController {
   private var cache: CacheService = _
 
   @Autowired
+  private var shareService: ShareService = _
+
+  @Autowired
   private var fileService: FileService = _
 
   @Autowired
@@ -42,18 +46,9 @@ class DatasetController {
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
     val userData = cache.getUserData(user.getName)
-    if (userData.get().parquetDir == null) {
-      userData.get().parquetDir = appService.dataRootPath
-      userData.save()
-    }
     val mav: ModelAndView = new ModelAndView("dataset_browser")
-    mav.addObject("version", appService.buildVersion)
-    mav.addObject("user", user)
+    appService.addCommonPageObjects(mav, user, cache, parquetService)
     mav.addObject("dataRootDir", userData.get().parquetDir)
-    mav.addObject("jsEventsMinimize", appService.jsEventsMinimize)
-    mav.addObject("capexPageEnabled", appService.capexPageEnabled)
-    val dbUser = cache.users.get().users(user.getName)
-    mav.addObject("colorMode", dbUser.colorMode)
     mav
   }
 
@@ -61,13 +56,12 @@ class DatasetController {
   def shareLink(@RequestParam("sid") shareId: String, user: Principal, response: HttpServletResponse): ModelAndView = {
     if (shareId != null && shareId.nonEmpty) {
       try {
-        copySharedTabOrSection(shareId, user.getName)
+        shareService.copySharedTabOrSection(shareId, user.getName)
       } catch {
         case ex: Exception =>
           log.error(ex.getMessage, ex)
           val mav: ModelAndView = new ModelAndView("error")
           mav.addObject("message", ex.getMessage)
-          mav
       }
     }
     response.sendRedirect("/dataset")
@@ -150,19 +144,44 @@ class DatasetController {
     val dirList = if (refresh) {
       val key = cacheKeyForParquet(pathR)
       var list = cache.getParquetDir(key)
-      list.keys.map(parquetService.dropView)
+      list.keys.foreach(parquetService.dropView)
       cache.parquetDirs.get().dirs.remove(key)
       list = parquetService.listHdfsDirs(pathR)
       cache.putParquetDir(cacheKeyForParquet(pathR), list)
       list
     }
     else if (pathR.nonEmpty) {
+      val allowedPaths = appService.allowedRootPaths.map(FilenameUtils.separatorsToUnix).toSeq
+      if (allowedPaths.nonEmpty) {
+        allowedPaths.find(pathR.startsWith).getOrElse(
+          throw new AccessDeniedException(s"'$path'. Please check 'data.allowed.root.paths' configuration."))
+      }
       val list = cache.getParquetDirOrElseUpdate(cacheKeyForParquet(pathR), () => parquetService.listHdfsDirs(pathR))
       userData.get().datasets.add(pathR)
       userData.save()
       list
     }
     E2EVariables.objectMapper.writeValueAsString(buildTreeViewData(userData.get().datasets, pathR))
+  }
+
+  @GetMapping(path = Array("/browseFolder"), produces = Array("application/json"))
+  @ResponseBody
+  def browseFolder(path: String, user: Principal): String = {
+
+    if (path != null && appService.allowedRootPaths.nonEmpty) {
+      require(appService.allowedRootPaths.exists(ap => path.startsWith(ap)), s"$path: Access not allowed")
+    }
+    val path0 = if (path == null) {
+      if (appService.allowedRootPaths.nonEmpty) appService.allowedRootPaths(0)
+      else parquetService.fsDefault.getHomeDirectory.toString
+    } else path
+    val results = Map("data" -> parquetService.listFiles(path0, includeDirs = true).map(f => {
+      val dateFormatted = f.date.toInstant.atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+      //Don't format the size because the sorting on the UI side will fail
+      Seq(f.filename, f.size, dateFormatted, path0 + "/" + f.filename, if (f.isDir) "folder" else "file")
+    }), "path" -> path0)
+    E2EVariables.objectMapper.writeValueAsString(results)
   }
 
   @GetMapping(path = Array("/listFiles"), produces = Array("application/json"))
@@ -217,6 +236,12 @@ class DatasetController {
       E2EVariables.objectMapper.writeValueAsString(Map("sql" -> sql))
     } else if (`type` == "CACHE_TABLE") {
       val sql = s"CACHE TABLE cache1 AS (SELECT * FROM ${hFile.table})"
+      E2EVariables.objectMapper.writeValueAsString(Map("sql" -> sql))
+    } else if (`type` == "DESCRIPTIVE_STATS") {
+      val sql = Seq("count", "mean", "std", "min", "max").map(f => {
+        val colsWithFuncCalls = hFile.schema.keys.map(c => s"$f($c) $c").mkString(", ")
+          s"""SELECT "$f" summary, $colsWithFuncCalls FROM ${hFile.table}"""
+      }).mkString(" UNION ")
       E2EVariables.objectMapper.writeValueAsString(Map("sql" -> sql))
     } else if (`type` == "PIVOT") {
       val cols = params.get("cols").split(",").map(_.trim)
@@ -285,66 +310,6 @@ class DatasetController {
         val nodes = x._2.toSeq.sorted(ord).map(c => TreeViewNode(c.table, c.path, c.format, Str.formatFileSize(c.size)))
         TreeViewNode(x._1, nodes = nodes, tags = Seq(nodes.size), size = Str.formatFileSize(x._2.map(_.size).sum))
       })
-  }
-
-  def copySharedTabOrSection(shareId: String, username: String) = {
-    val tokens = Str.decodeBase64(shareId).split(":")
-    val sourceUser = tokens(1)
-    // If you own the link you don't need to copy it
-    if (sourceUser != username) {
-      val tabId = tokens(2)
-      val sectionId = if (tokens.length > 3) tokens(3) else null
-
-      val sourceUserTabs = cache.getUserData(sourceUser).get().workbook.tabs
-      if (sourceUserTabs.contains(tabId)) {
-        val tab = sourceUserTabs(tabId)
-        val currUserData = cache.getUserData(username)
-        val currUserWb = currUserData.get().workbook
-        val wb = if (sectionId == null) {
-          copySharedTab(sourceUser, tab, currUserWb)
-        } else {
-          val sourceSections = tab.sections
-          if (sourceSections.contains(sectionId)) {
-            copySharedSection(sourceUser, sourceSections(sectionId), currUserWb)
-          } else {
-            throw new IllegalArgumentException("Link has expired.")
-          }
-        }
-        currUserData.get().workbook = wb
-        currUserData.save()
-      } else {
-        throw new IllegalArgumentException("Link has expired.")
-      }
-    }
-  }
-
-  def copySharedTab(sourceUser: String, tab: Tab, destWb: Workbook): Workbook = {
-    val newId = destWb.tabCounter + 1
-    val newTabId = "#s-tab" + newId
-    val newTabContentId = "#s-tab-content" + newId
-    val newSectionIdStart = destWb.sectionCounter
-    val newSectionIds = (newSectionIdStart + 1 to newSectionIdStart + tab.sectionOrder.size)
-      .map("#shared-section" + _).toList
-    val oldNewIdMap = tab.sectionOrder.zip(newSectionIds).toMap
-    val newSections = tab.sections.map(k => oldNewIdMap(k._1) -> k._2.copy(oldNewIdMap(k._1)))
-    val newTab = tab.copy(tabId = newTabId, tabContentId = newTabContentId, sections = newSections, sectionOrder = newSectionIds,
-      currentSection = oldNewIdMap(tab.currentSection))
-    destWb.copy(currentTab = newTab.tabId, tabs = destWb.tabs ++ Map(newTab.tabId -> newTab),
-      tabOrder = destWb.tabOrder ++ List(newTab.tabId), tabCounter = newId,
-      sectionCounter = newSectionIdStart + tab.sectionOrder.size)
-  }
-
-  def copySharedSection(sourceUser: String, section: Section, destWb: Workbook): Workbook = {
-    val tab = if (destWb.tabs.contains("#sq-tab")) destWb.tabs("#sq-tab") //shared queries tab
-      else Tab("#sq-tab", "#sq-tab-content", false, "Shared", List.empty, null, Map.empty)
-    val newId = destWb.sectionCounter + 1
-    val newSectionId = "#shared-section" + newId
-    val sectionClone = section.copy(sectionId = newSectionId)
-    val newTab = tab.copy(sectionOrder = List(newSectionId) ++ tab.sectionOrder,
-      currentSection = newSectionId, sections = tab.sections ++ Map(newSectionId -> sectionClone))
-    destWb.copy(currentTab = newTab.tabId, tabs = destWb.tabs ++ Map(newTab.tabId -> newTab),
-      tabOrder = (destWb.tabOrder ++ List(newTab.tabId)).distinct,
-      sectionCounter = newId)
   }
 
 }

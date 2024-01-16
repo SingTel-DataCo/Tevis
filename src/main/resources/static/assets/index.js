@@ -19,17 +19,9 @@ $(function() {
     $("#mySidebar").resizable({ handles: "e" });
     navPane.initialize();
     $('.dataTable table').DataTable();
-    $("#btn-add-dataset").click(function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if ($('#form-new-dataset')[0].reportValidity()) {
-            getAllDatasets($("#new-dataset-path").val());
-            $('.modal-new-dataset').dialog("close");
-        } else {
-        }
-     });
     $("#new-dataset-path").on('keyup', function (e) {
-        if (e.key === 'Enter') $("#btn-add-dataset").trigger('click');
+        if (e.key === 'Enter') $("#btn-new-ds-browse").trigger('click');
+        else $("#btn-add-dataset").prop('disabled', true).addClass("ui-state-disabled");
     });
     syncWork(function(wb){
        if (wb.tabOrder.length == 0) {
@@ -78,6 +70,17 @@ $(function() {
         });
     });
 
+    $(".btn-toggle-hide-editors").click(function(){
+        let tabContentId = wb.tabs[wb.currentTab].tabContentId;
+        let numHidden = $(tabContentId + ' .accordion-item .input-group.d-none').length;
+        console.log(numHidden);
+        if (numHidden > 0) {
+            $(tabContentId + ' .accordion-item .input-group').removeClass('d-none');
+        } else {
+            $(tabContentId + ' .accordion-item .input-group').addClass('d-none');
+        }
+    });
+
     $('.btn-share-tab').click(function(){
         let tab = wb.tabs[wb.currentTab];
         shareLink('tab - ' + tab.tabName, wb.currentTab, null, this);
@@ -102,6 +105,21 @@ $(function() {
             $('#toggle-collapse-btn .toggle-close').hide();
             $('#toggle-collapse-btn .toggle-open').show();
         }
+    });
+
+    $('#btn-new-ds-back').click(function(){
+        if (fePaths.length > 1) {
+            fePaths.pop();
+            $('#new-dataset-path').val(fePaths.pop());
+            $("#table-file-explorer table").DataTable().ajax.reload();
+        }
+    });
+    $('#btn-new-ds-home').click(function(e){
+        $('#new-dataset-path').val("");
+        $("#table-file-explorer table").DataTable().ajax.reload();
+    });
+    $('#btn-new-ds-browse').click(function(e){
+        $("#table-file-explorer table").DataTable().ajax.reload();
     });
 //    var map = L.map('map').setView([37.857142857142854,20.0], 11);
 //    var CartoDB_Positron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -143,7 +161,7 @@ function renderDataTable(section, jsonContent) {
     let chartModel = section.chartModel;
     let columns = Object.keys(jsonContent.schema);
     let dataTableData = jsonContent.data.map(function(d){ return columns.map(function(k){
-        return typeof d[k] === "object" ? JSON.stringify(d[k]) : d[k] }) });
+        return typeof d[k] === "object" && d[k] && !k.toLowerCase().includes("date") ? JSON.stringify(d[k]) : d[k] }) });
     let dsColumns = columns.map(function(k) {return { "title" : k, "defaultContent": "" }});
     let elemId = rootId + " .dataTable";
     let domTable = $(elemId);
@@ -307,9 +325,10 @@ function getDataFromDataset(node, rootDir) {
     $.get( "/dataset/getDataFromTable",
         {"table" : node.text, "rootPath": rootDir},
         function(response) {
+            response.query.data = formatDate(response.query.data, response.query.schema);
             response.query.duration = (Date.now() - startTime) / 1000.0;
             let sql = response.query.sql;
-            $(currSection + " .search-box").val(sql);
+            ace.edit($(currSection + " .ace-edit-box")[0]).getSession().setValue(sql); //updating ace-edit-box automatically updates search-box
             let currTab = wb.tabs[wb.currentTab];
             let sectionObj = currTab.sections[currTab.currentSection];
             sectionObj.sectionName = node.text;
@@ -353,13 +372,21 @@ function setTableEventHandlers(tabId, elemId) {
         });
     }
 
-    $(elemId + " .search-box").on('keyup', function (e) {
+    let textarea = $(elemId + " .search-box");
+    textarea.on('keyup', function (e) {
         if (e.key === 'Enter' && e.ctrlKey) $(elemId + " .search-btn").trigger('click');
         else if (!jsEventsMinimize) {
             $(this).height( 'auto' );
             $(this).height( $(elemId + " .search-box")[0].scrollHeight );
         }
     });
+    let editor = setupCodeEditor(textarea);
+    editor.commands.addCommand({
+        exec: function() { $(elemId + " .search-btn").trigger('click'); },
+        bindKey: {mac: "ctrl-enter", win: "ctrl-enter"}
+    });
+    editor.setTheme("ace/theme/cloud_editor");
+
 
     $(elemId + " .btn-delete-section").click(function () {
         let currTab = wb.tabs[wb.currentTab];
@@ -393,6 +420,7 @@ function runCachedQueryOnThisSection(tabId, section) {
     $(sectionId + " .loading").show();
     $.get( "/dataset/getCachedQuery", {"queryId" : queryId}, function(response) {
         if (response) {
+            response.data = formatDate(response.data, response.schema);
             if ($.isEmptyObject(response.schema)) response.schema = {column: null};
             showQueryWarningIfNeeded(section, response.lf);
             renderDataTable(section, response);
@@ -413,7 +441,7 @@ function runCachedQueryOnThisSection(tabId, section) {
 }
 
 function runQueryOnThisSection(tabId, sectionId) {
-    let sql = $(sectionId + " .search-box").val();
+    let sql = $(sectionId + " textarea.search-box").val();
     if (sql.length == 0) return;
     let currTab = wb.tabs[tabId];
     let section = currTab.sections[sectionId];
@@ -424,7 +452,7 @@ function runQueryOnThisSection(tabId, sectionId) {
     $(sectionId + " .loading").show();
     var startTime = Date.now();
     $.post( "/dataset/queryTable", {"sql" : sql}, function(response) {
-
+        response.query.data = formatDate(response.query.data, response.query.schema);
         response.query.duration = (Date.now() - startTime) / 1000.0;
         if ($.isEmptyObject(response.query.schema)) response.query.schema = {column: null};
         showQueryWarningIfNeeded(section, response.query.lf);
@@ -639,19 +667,105 @@ function createSectionFromObj(tabId, tabContentId, section) {
     });
 }
 
-function showNewDatasetModal() {
-   $("#new-dataset-path").val('');
-   $('.modal-new-dataset').dialog({
-        title: "New dataset",
-        modal: true,
-        width: 500,
-        height: 220,
-        buttons: {
-            Close: function() {
-              $( this ).dialog( "close" );
+let fileExplorer = null;
+let feTable = null;
+let feColumns = null;
+let fePaths = [];
+function browseFileExplorer(path) {
+
+    feColumns = [{title: "name", width: "90%",
+        data: null,
+        render: function(data, type, row, meta){
+            if(type === 'display'){
+                let isFolder = data[4] == "folder";
+                data = '<i style="color: grey" class="fa fa-' + data[4] + '"></i> ' + data[0];
+                if (isFolder) {
+                    data = '<a href="#">' + data + '</a>';
+                }
+            }
+            return data;
+        }
+    }, {title: "size", width: "10%"}, {title: "date", width: "10%"}, {title: "path", visible: false}];
+    feTable = $("#table-file-explorer table").DataTable( {
+       dom: 'rt',
+       processing: true,
+       language: { processing: loadingDiv[0].outerHTML },
+       paginate: false,
+       scrollY: "200px",
+       columns: feColumns,
+       ajax: {
+            "url": "/dataset/browseFolder",
+            "data": function(data) {
+                if ($('#new-dataset-path').val() != "") {
+                    data.path = $('#new-dataset-path').val();
+                }
+            },
+            error: function (xhr, error, code) {
+                alert(error + "\n" + xhr.responseText);
+            }
+        },
+        drawCallback: function (settings) {
+            var response = settings.json;
+            if (response) {
+                $('#new-dataset-path').val(response.path);
+                $('#new-ds-status-info').html(response.data.length + " items");
+                if (response.data.length > 0) {
+                    $("#btn-add-dataset").prop('disabled', false).removeClass("ui-state-disabled");
+                } else {
+                    $("#btn-add-dataset").prop('disabled', true).addClass("ui-state-disabled");
+                }
+                fePaths.push($('#new-dataset-path').val());
             }
         }
-     });
+    }).on( 'draw', function () {
+        $('#table-file-explorer tbody tr').click(function(event) {
+            $(this).addClass('row-selected').siblings().removeClass('row-selected');
+            $('#btn-add-dataset').prop('disabled', false).removeClass("ui-state-disabled");
+        });
+        $('#table-file-explorer tbody tr a').click(function(e) {
+            let rowData = extractRowDataJson(feTable, $(e.target), feColumns.map(c => c.title));
+            $('#new-dataset-path').val(rowData.path);
+            $("#table-file-explorer table").DataTable().ajax.reload();
+        });
+    });
+
+}
+
+function showNewDatasetModal() {
+
+   if (fileExplorer == null) {
+       browseFileExplorer();
+       $("#new-dataset-path").val('');
+       fileExplorer = $('.modal-new-dataset').dialog({
+            title: "New dataset",
+            autoOpen: false,
+            modal: true,
+            width: 500,
+            height: 400,
+            buttons: {
+                Add: {
+                    text: "Add Dataset",
+                    id: "btn-add-dataset",
+                    click: function(e) {
+                        if ($('#table-file-explorer .row-selected').length > 0) {
+                            let rowData = extractRowDataJson(feTable, $('#table-file-explorer .row-selected td'), feColumns.map(c => c.title));
+                            getAllDatasets(rowData.path);
+                        } else {
+                            getAllDatasets($("#new-dataset-path").val());
+                        }
+                        $('.modal-new-dataset').dialog("close");
+                    }
+                },
+                Close: function() {
+                  $( this ).dialog( "close" );
+                }
+            },
+            create: function() {
+                $("<span id='new-ds-status-info' class='dataTables_info small mt-4'></span>").insertBefore($(this).closest(".ui-dialog").find(".ui-dialog-buttonset"));
+            }
+         });
+   }
+   fileExplorer.dialog('open');
 }
 
 function shareLink(type, tabId, sectionId, elem) {

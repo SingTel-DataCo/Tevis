@@ -84,14 +84,7 @@ public class JsonDb<T> {
                 LOGGER.error("Error reading file " + dataFile, e);
             }
         }
-        try {
-            T dataModel = jsonDataModel.newInstance();
-            LOGGER.info("JSON DB location: " + f.getAbsolutePath());
-            return dataModel;
-        } catch (InstantiationException | IllegalAccessException e) {
-            LOGGER.error(e.getMessage(), e);
-            return null;
-        }
+        return null;
     }
 
     public static <T> boolean saveJson(T dataCache, String dataFile) {

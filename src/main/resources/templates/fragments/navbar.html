@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <nav th:fragment="navbar" class="navbar navbar-expand-md fixed-top bg-body-secondary" data-bs-theme="dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <div><span id="sidebarHeader">
+                <img src="/assets/images/logo-header.png" width="100" /></span> <span id="version">[(${version})]</span>
+                </div>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link active dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            [(${pageName})]
+                        </a>
+                        <ul class="dropdown-menu">
+                            <div th:if="${(capexPageEnabled != null and capexPageEnabled) or pageName == 'Module Browser'}">
+                                <li><a class="dropdown-item" href="/capex">Module Browser</a></li>
+                            </div>
+                            <li><a class="dropdown-item" href="/dataset">Dataset Browser</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item" th:if="${pageName == 'Dataset Browser'}">
+                        <a id="btn-show-modal-new-ds" class="nav-link" href="#" role="button"><i class="fa fa-folder-plus"></i> New Dataset</a>
+                    </li>
+                    <li class="nav-item" th:if="${pageName == 'Module Browser'}">
+                        <div id="update-form" class="form-inline d-flex">
+                            <span style="color: #888; font-size: small; white-space: nowrap; padding-top: 10px">Pipeline Root Path:</span>
+                            <div class="input-group">
+                                <input class="form-control" id="input-path-edit" type="text" style="font-size: small"
+                                       name="query" placeholder="Update" aria-label="Update" th:value="${capexDir}">
+                                <input type="hidden" id="input-path" th:value="${capexDir}">
+                                <button id="update-path-btn" class="btn btn-outline-success" type="submit"><i class="fa fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i th:style="${isSparkAlive} ? 'color: limegreen' : 'color: indianred'" class="fa fa-user"></i> [(${user.name})]
+                        </a>
+                        <ul class="dropdown-menu">
+                            <div th:if="${#strings.contains(user.authorities,'ADMIN')}">
+                                <li><a class="dropdown-item" href="/admin">Admin</a></li>
+                                <li class="dropdown-divider"></li>
+                            </div>
+                            <li><a class="dropdown-item" href="/settings">Settings</a></li>
+                            <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</html>

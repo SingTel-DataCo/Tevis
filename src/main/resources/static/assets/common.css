@@ -46,7 +46,7 @@ div.inline {
   top: 0;
   left: 0;
   overflow-x: hidden;
-  background-color: var(--bs-secondary-bg);
+  background-color: var(--bs-secondary-bg-subtle);
   padding: 0 10px;
 }
 
@@ -56,7 +56,7 @@ div.inline {
 
 #version {
  font-size: 12px;
-  color: grey
+ color: white;
 }
 
 #main {
@@ -65,7 +65,7 @@ div.inline {
 }
 
 #wrapper {
-    float: left; width: 100%; padding-top: 60px;
+    padding-top: 60px;
 }
 
 #chartView {
@@ -74,7 +74,7 @@ div.inline {
 
 #footer {
     position: absolute;
-    background-color: #eee;
+    background: var(--bs-tertiary-bg);
     bottom: 0;
     width: 100%;
     left: 0px;
@@ -88,13 +88,26 @@ div.inline {
     width: 10px;
 }
 
+.ui-resizable-handle.ui-resizable-e:hover, #toggle-collapse-btn:hover {
+    background-color: var(--bs-secondary-bg);
+    color: white;
+}
+
 .ui-accordion .ui-accordion-content {
     padding: 5px;
     height: 61vh;
 }
 
+.dt-buttons {
+    float: right;
+}
+
 .dt-buttons .btn {
     font-size: small;
+}
+
+.tab-actions {
+    border: var(--bs-border-width) solid var(--bs-border-color);
 }
 
 .dataTable {
@@ -110,7 +123,7 @@ div.inline {
     color: grey;
 }
 
-.dataTable tbody tr.row-selected {
+.dataTable tbody tr.row-selected, .dataTable tbody tr.row-selected a {
     background-color: var(--bs-link-hover-color);
     color: var(--bs-border-color);
 }
@@ -176,10 +189,6 @@ div.dt-button-collection .dt-button {
     float: left;
     position: relative;
     z-index: 10;
-}
-
-.dt-buttons {
-    float: right;
 }
 
 #json-viewer {
@@ -333,20 +342,30 @@ div.dt-button-collection .dt-button {
     background-color: grey;
 }
 
+.navbar-brand {
+    background-color: var(--bs-gray-dark);
+    border-radius: 4px;
+    padding: 5px;
+}
+
 .nav-tabs > li .closeTab {
     font-size: xx-small;
 }
 
 .accordion-item {
     margin: 4px;
+    border-radius: 4px;
 }
 
 .accordion-collapse {
-    margin: 15px;
+    margin: 5px 15px;
     font-size: small;
 }
 
 .accordion-header {
+    padding: 0 0 0 5px;
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
     background-color: var(--bs-accordion-border-color);
 }
 
@@ -429,11 +448,17 @@ div.dt-button-collection .dt-button {
 /* Copied from https://codepen.io/andornagy/pen/ALbdbJ END */
 
 .ui-widget-header {
-    background: var(--bs-primary-bg-subtle);
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    border: var(--bs-border-color);
+}
+
+.ui-dialog, .ui-dialog-buttonpane, .ui-widget-content, .ui-dialog a {
+    background: var(--bs-body-bg);
     color: var(--bs-body-color);
 }
 
-.ui-widget-content {
-    background: var(--bs-body-bg);
-    color: var(--bs-body-color);
+.ace_gutter {
+    background: var(--bs-body-bg) !important;
+    color: var(--bs-border-color) !important;
 }

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <script src="/assets/vendor/jquery-3.6.0.min.js"></script>
+  <script src="/assets/vendor/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="/assets/vendor/bootstrap-5.3.0.min.css">
+  <link rel="stylesheet" href="/assets/login.css">
+  <link rel="stylesheet" href="/assets/common.css">
+  <script src="/assets/register.js"></script>
+
+  <title>E2E Pipeline Visualization</title>
+</head>
+<body>
+
+<div class="container-fluid">
+  <div class="row main-content bg-primary text-center">
+    <div class="col-md-4 d-flex justify-content-center company-info">
+        <div class="justify-content-center align-self-center">
+          <img class="logo" src="/assets/images/logo-lg.png" />
+          <div class="slogan">End-to-end Pipeline Visualization</div>
+        </div>
+    </div>
+    <div class="col-md-8 col-xs-12 col-sm-12 login_form">
+      <div class="container-fluid">
+        <span class="login_header">Create Account</span>
+        <div class="row">
+          <form id="form-create-account" class="form-group" action="register" method="post">
+            <div class="row div-error-msg">
+              <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+            </div>
+            <div class="row">
+              <input type="text" name="username" id="username" class="form__input" placeholder="Create username" required minlength="5" maxlength="20">
+            </div>
+            <div class="row">
+              <input type="password" name="password" id="password" class="form__input" placeholder="Create password" required minlength="5" maxlength="20">
+            </div>
+            <div class="row">
+              <input type="password" name="password" id="password2" class="form__input" placeholder="Confirm password" required minlength="5" maxlength="20">
+            </div>
+
+            <div class="d-flex">
+              <input type="submit" id="btn-register" value="Submit" class="btn btn-primary m-1">
+              <a href="/login" class="btn btn-secondary-outline m-1">Cancel</a>
+            </div>
+            <div>
+              <p class="text-muted small mt-5">Please reach out to the <a th:href="'mailto:' + ${adminEmail}">admin</a> if you need help with login or signup.</p>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>

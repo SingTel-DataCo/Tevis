@@ -67,7 +67,6 @@ object E2EVariables {
   val runConfMap =
     Map("site" -> Seq("SiteRunConfig.conf"), "sector" -> Seq.empty[String], "cluster" -> Seq("ClusterRunConfig.conf"))
 
-
   def confPath(rootPath: String): String = {
     val f = new File(rootPath + "/" + relativeConfPath)
     if (!f.exists()) throw new FileNotFoundException("Path doesn't exist: " + f.getAbsolutePath)

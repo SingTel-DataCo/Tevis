@@ -10,8 +10,6 @@
 
 package com.dataspark.networkds.util
 
-import org.apache.spark.sql.DataFrame
-
 import scala.collection.mutable.ListBuffer
 
 object RunnerType extends Enumeration { val SparkJob, Python = Value }

@@ -1,12 +1,15 @@
+#input-path-edit {
+  width: 600px;
+}
+
+@media screen and (max-width:1300px){
+   #input-path-edit {
+      width: 200px;
+   }
+}
 
 #mySidebar {
-  height: 100%;
-  width: 450px;
-  float:left;
-  top: 0;
-  left: 0;
-  overflow-x: hidden;
-  min-height: 99vh;
+  min-height: 90vh;
   padding-left: 10px;
 }
 

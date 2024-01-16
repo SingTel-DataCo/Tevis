@@ -1,0 +1,118 @@
+.container {
+  max-width: 960px;
+}
+
+.icon-link > .bi {
+  width: .75em;
+  height: .75em;
+}
+
+/*
+ * Custom translucent site header
+ */
+
+.site-header {
+  background-color: rgba(0, 0, 0, .85);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+.site-header a {
+  color: #8e8e8e;
+  transition: color .15s ease-in-out;
+}
+.site-header a:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+.logo {
+  width: 150px;
+  background: var(--bs-primary);
+  padding: 5px;
+  border:  10px solid var(--bs-secondary-bg);
+  border-radius:  20px;
+}
+
+.logo-header {
+  width: 80px;
+}
+
+/*
+ * Dummy devices (replace them with your own or something else entirely!)
+ */
+
+.product-device {
+  position: absolute;
+  right: 2%;
+  bottom: -15%;
+  width: 520px;
+  height: 340px;
+  background-color: #333;
+  border-radius: 21px;
+  transform: rotate(-50deg);
+}
+
+.product-device::before {
+  position: absolute;
+  top: 10%;
+  right: 10px;
+  bottom: 10%;
+  left: 10px;
+  content: "";
+  background-color: rgba(255, 255, 255, .1);
+  border-radius: 5px;
+  background: url(screenshot2.png);
+  background-size: 500px;
+}
+
+.product-device-2 {
+  top: -10%;
+  right: auto;
+  bottom: 0;
+  left: 2%;
+  background-color: #e5e5e5;
+}
+
+.table td {
+
+  padding: 0;
+}
+
+.logo-tech {
+
+  margin: 2px;
+  border: solid 1px var(--bs-border-color);
+  background-color: white;
+  width: 80px;
+  height: 30px;
+  border-radius: 10px;
+}
+
+
+/*
+ * Extra utilities
+ */
+
+.flex-equal > * {
+  flex: 1;
+}
+@media (min-width: 768px) {
+  .flex-md-equal > * {
+    flex: 1;
+  }
+
+  .logo {
+    width: 200px;
+  }
+
+  .logo-tech {
+
+    margin: 5px;
+    width: 110px;
+    height: 70px;
+    border-radius: 20px;
+    border: solid 1px var(--bs-border-color);
+    background-color: white;
+  }
+
+}

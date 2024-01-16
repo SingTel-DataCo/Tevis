@@ -5,33 +5,41 @@
 	margin: 5em auto;
 	display: flex;
 }
-.company__info{
-	background-color: #007fff;
-	border-top-left-radius: 20px;
-	border-bottom-left-radius: 20px;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	color: #fff;
+.company-info {
+    color: white;
 }
+.logo {
+    width: 100%;
+    max-width: 180px;
+}
+
 .fa-android{
 	font-size:3em;
 }
 @media screen and (max-width: 640px) {
 	.main-content{width: 90%;}
-	.company__info{
-		display: none;
-	}
 	.login_form{
 		border-top-left-radius:20px;
 		border-bottom-left-radius:20px;
 	}
+	.logo {
+	    width: 80px;
+        margin-top: 10px;
+    }
+    .slogan {
+        font-size: small;
+    }
 }
 @media screen and (min-width: 642px) and (max-width:800px){
 	.main-content{width: 70%;}
+    .logo {
+        width: 80px;
+        margin-top: 10px;
+    }
 }
-.row > h2{
+.login_header{
 	color:#007fff;
+	font-size: x-large;
 }
 .login_form{
 	background-color: #fff;
@@ -51,7 +59,7 @@ form{
 	padding: 1em .5em .5em;
 	padding-left: 2em;
 	outline:none;
-	margin:1.5em auto;
+	margin: 1em auto;
 	transition: all .5s ease;
 }
 .form__input:focus{
@@ -62,7 +70,6 @@ form{
 .btn{
 	transition: all .5s ease;
 	width: 100%;
-	border-radius: 30px;
 	color:#007fff;
 	font-weight: 600;
 	background-color: #fff;

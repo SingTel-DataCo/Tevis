@@ -1,13 +1,11 @@
 package com.dataspark.networkds.controller
 
-import com.dataspark.networkds.beans.UserInfo
-import com.dataspark.networkds.service.{AppService, CacheService, FileService, ParquetService}
+import com.dataspark.networkds.service._
 import com.dataspark.networkds.util.E2EVariables
 import lombok.extern.slf4j.Slf4j
 import org.apache.log4j.LogManager
-import org.springframework.beans.factory.annotation.{Autowired, Value}
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation._
 import org.springframework.web.servlet.ModelAndView
 
@@ -35,18 +33,15 @@ class AdminController {
   private var appService: AppService = _
 
   @Autowired
-  var passwordEncoder: PasswordEncoder = _
+  private var userService: DbUserDetailsService = _
+
 
   val log = LogManager.getLogger(this.getClass.getSimpleName)
 
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
     val mav: ModelAndView = new ModelAndView("admin")
-    mav.addObject("version", appService.buildVersion)
-    mav.addObject("capexPageEnabled", appService.capexPageEnabled)
-    mav.addObject("user", user)
-    val dbUser = cache.users.get().users(user.getName)
-    mav.addObject("colorMode", dbUser.colorMode)
+    appService.addCommonPageObjects(mav, user, cache, parquetService)
     mav
   }
 
@@ -63,26 +58,12 @@ class AdminController {
 
   @PostMapping(path = Array("/createUser"))
   def createUser(username: String, password: String, roles: String, user: Principal): Boolean = {
-    val jsonDb = cache.users
-    if (jsonDb.get().users.contains(username)) {
-      throw new IllegalArgumentException(s"Username $username already exists. Please use another one.")
-    }
-    val user = UserInfo(username, passwordEncoder.encode(password), roles.split(","))
-    jsonDb.get().users.put(user.username, user)
-    jsonDb.save()
+    userService.createUser(username, password, roles)
   }
 
   @PostMapping(path = Array("/modifyUser"))
   def modifyUser(username: String, password: String, roles: String, user: Principal): Boolean = {
-    val jsonDb = cache.users
-    if (!jsonDb.get().users.contains(username)) {
-      throw new IllegalArgumentException(s"Username $username doesn't exist.")
-    }
-    val user = jsonDb.get().users(username)
-    val pass = if (password.isEmpty) user.password else passwordEncoder.encode(password)
-    val modifiedUser = UserInfo(username, pass, roles.split(","), user.isDisabled, user.lastCreated, user.lastLogin)
-    jsonDb.get().users.put(username, modifiedUser)
-    jsonDb.save()
+    userService.modifyUser(username, password, roles)
   }
 
   @PostMapping(path = Array("/deleteUser"))

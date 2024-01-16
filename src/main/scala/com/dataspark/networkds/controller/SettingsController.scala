@@ -1,12 +1,9 @@
 package com.dataspark.networkds.controller
 
-import com.dataspark.networkds.beans.UserInfo
-import com.dataspark.networkds.service.{AppService, CacheService, ParquetService}
-import com.dataspark.networkds.util.E2EVariables
+import com.dataspark.networkds.service.{AppService, CacheService, DbUserDetailsService, ParquetService}
 import lombok.extern.slf4j.Slf4j
 import org.apache.log4j.LogManager
-import org.springframework.beans.factory.annotation.{Autowired, Value}
-import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation._
 import org.springframework.web.servlet.ModelAndView
 
@@ -22,34 +19,28 @@ class SettingsController {
   private var cache: CacheService = _
 
   @Autowired
-  var passwordEncoder: PasswordEncoder = _
+  private var appService: AppService = _
 
   @Autowired
-  private var appService: AppService = _
+  private var parquetService: ParquetService = _
+
+  @Autowired
+  private var userService: DbUserDetailsService = _
 
   val log = LogManager.getLogger(this.getClass.getSimpleName)
 
   @GetMapping(path = Array("", "/", "/index"))
   def index(user: Principal): ModelAndView = {
     val mav: ModelAndView = new ModelAndView("settings")
-    mav.addObject("version", appService.buildVersion)
-    mav.addObject("capexPageEnabled", appService.capexPageEnabled)
-    mav.addObject("user", user)
-    val dbUser = cache.users.get().users(user.getName)
-    mav.addObject("colorMode", dbUser.colorMode)
+    appService.addCommonPageObjects(mav, user, cache, parquetService)
+    mav.addObject("sparkUiWebUrl",
+      if (parquetService.isSparkAlive) parquetService.mySparkSession.sparkContext.uiWebUrl.get else "")
+    mav
   }
 
   @PostMapping(path = Array("/updatePassword"))
   def modifyPassword(oldPassword: String, newPassword: String, user: Principal): Boolean = {
-    val jsonDb = cache.users
-    val dbUser = jsonDb.get().users(user.getName)
-    if (!passwordEncoder.matches(oldPassword, dbUser.password)) {
-      throw new IllegalArgumentException("Old password is incorrect.")
-    }
-    val modifiedUser = UserInfo(dbUser.username, passwordEncoder.encode(newPassword),
-      dbUser.roles, dbUser.isDisabled, dbUser.lastCreated, dbUser.lastLogin)
-    jsonDb.get().users.put(dbUser.username, modifiedUser)
-    jsonDb.save()
+    userService.modifyPassword(user.getName, oldPassword, newPassword)
   }
 
   @PostMapping(path = Array("/updateSettings"))
