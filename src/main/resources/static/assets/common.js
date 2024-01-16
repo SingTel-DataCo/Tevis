@@ -124,7 +124,7 @@ function initChartSettings(elemId, ds, chartModel, chartRenderedCallback) {
                    id: 'SimpleMeshLayer',
                    data: ds.data,
                    /* props from SimpleMeshLayer class */
-                   getColor: d => [75, 140, 0],
+                   getColor: d => [255, 255, 0],
                    getOrientation: d => [0, Math.random() * 180, 0],
                    getPosition: d => d.coordinates,
                    // getScale: [1, 1, 1],

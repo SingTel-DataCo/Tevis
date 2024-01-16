@@ -181,6 +181,18 @@ class NavigationPane {
                 $(currSection + " .search-btn").trigger("click");
             }
         });
+        btnActions.find(".btn-tmplt-parquet").click(function(e){
+            let rootDir = btnActions.attr("rootDir");
+            if (btnActions.attr("act-on") == "file-item") {
+                let node = { text: btnActions.attr("filename"), path: rootDir };
+                let currSection = wb.tabs[wb.currentTab].currentSection;
+                let code = "%scala\n" +
+                    "val df = spark.read.table(\"" + node.text + "\")\n" +
+                    "df.coalesce(1).write.parquet(\"" + rootDir + "/" + "_parquet\")\n" +
+                    "df.limit(1)";
+                ace.edit($(currSection + " .ace-edit-box")[0]).getSession().setValue(code);
+            }
+        });
         btnActions.tooltip();
 
         $("#btn-file-filter").click(function(e) {

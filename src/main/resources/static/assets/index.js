@@ -70,6 +70,17 @@ $(function() {
         });
     });
 
+    $(".btn-toggle-hide-editors").click(function(){
+        let tabContentId = wb.tabs[wb.currentTab].tabContentId;
+        let numHidden = $(tabContentId + ' .accordion-item .input-group.d-none').length;
+        console.log(numHidden);
+        if (numHidden > 0) {
+            $(tabContentId + ' .accordion-item .input-group').removeClass('d-none');
+        } else {
+            $(tabContentId + ' .accordion-item .input-group').addClass('d-none');
+        }
+    });
+
     $('.btn-share-tab').click(function(){
         let tab = wb.tabs[wb.currentTab];
         shareLink('tab - ' + tab.tabName, wb.currentTab, null, this);

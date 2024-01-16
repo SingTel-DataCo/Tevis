@@ -18,6 +18,9 @@ class AppService {
   @Value("${capex.page.enabled:false}")
   var capexPageEnabled: Boolean = _
 
+  @Value("${register.page.enabled:false}")
+  var registerPageEnabled: Boolean = _
+
   @Value("${js_events.minimize:false}")
   var jsEventsMinimize: Boolean = _
 

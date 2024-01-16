@@ -32,17 +32,9 @@ Tevis is also an end-to-end pipeline visualization tool for CAPEX.
 For Windows users, there is no need to install **winutils.exe**
 
 ## Install and run Tevis locally
-### On Windows
 
 1. Download zip file from the [latest release](https://github.com/SingTel-DataCo/Tevis/releases) and unzip it.
-2. Double-click on `run-app.bat`. This will run the application and automatically open your browser at `http://localhost:8085/`
-3. Default credentials are `dataspark-admin` / `dataspark-admin`.
-
-### On Mac/Linux
-
-1. Download zip file from the [latest release](https://github.com/SingTel-DataCo/Tevis/releases) and unzip it.
-2. Run Terminal app and go to your Tevis root directory. (e.g. `cd /home/user/tevis-1.0.0`)
-2. Run `run-app.sh`. This will run the application and automatically open your browser at `http://localhost:8085/`
+2. Double-click on `run-app.bat` (on Windows) or `run-app.sh` (on Mac/Linux). This will run the application and automatically open your browser at `http://localhost:8085/`
 3. Default credentials are `dataspark-admin` / `dataspark-admin`.
 
 ## Install and run Tevis on a YARN cluster

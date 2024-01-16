@@ -378,7 +378,7 @@ class ParquetService {
       val rootDirPath = new Path(E2EConfigUtil.toS3(rootDir))
       val fs = getFs(rootDirPath.toString)
       if (isWindows) { //TODO: Use this for local spark runs in Linux/Mac machines
-        listLocalDirs(rootDir).foreach(list += _)
+        listLocalDirs(rootDir.replaceAll("file:", "")).foreach(list += _)
       }
       else if (fs.isFile(rootDirPath)) {
         val parentPath = rootDirPath.getParent

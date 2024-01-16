@@ -178,7 +178,8 @@ class DatasetController {
     val results = Map("data" -> parquetService.listFiles(path0, includeDirs = true).map(f => {
       val dateFormatted = f.date.toInstant.atZone(ZoneId.systemDefault())
         .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-      Seq(f.filename, Str.formatFileSize(f.size), dateFormatted, path0 + "/" + f.filename, if (f.isDir) "folder" else "file")
+      //Don't format the size because the sorting on the UI side will fail
+      Seq(f.filename, f.size, dateFormatted, path0 + "/" + f.filename, if (f.isDir) "folder" else "file")
     }), "path" -> path0)
     E2EVariables.objectMapper.writeValueAsString(results)
   }
