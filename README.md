@@ -65,4 +65,18 @@ For Windows users, there is no need to install **winutils.exe**
 8. Google Charts
 9. Leaflet JS
 
+## Troubleshooting
+### 1. System memory size issue
+If you encounter an error similar to the screenshot below:
+
+<img width="453" alt="System memory size error" src="https://github.com/SingTel-DataCo/Tevis/assets/46181126/309b03c1-d03d-4298-ad7b-c7bd5e3eb0e7">
+
+Try to update your `run-app.bat` or `run-app.sh` by inserting `-Xmx500m` into your `java` command line call like so:
+`java -Xmx500m -Dapp.name="Tevis" ...`. This will set the JVM maximum heap space to 500 MB, assuming that your RAM can accommodate it.
+
+### 2. Unsupported class version
+If you encounter an error saying "Unsupported class file major version 55", this means that your Java version isn't 1.8. You will need to install Java 8 for the program to work.
+
+---
+
 If you have any questions, feel free to reach out to julius.delfino@dsanalytics.com.
